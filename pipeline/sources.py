@@ -141,7 +141,7 @@ def fetch(src):
 def write_raw(path, payload):
     path.parent.mkdir(parents=True, exist_ok=True)
     # mtime=0 keeps the gzip bytes identical for identical payloads
-    with gzip.GzipFile(path, "wb", mtime=0) as f:
+    with open(path, "wb") as out, gzip.GzipFile(filename="", fileobj=out, mode="wb", mtime=0) as f:
         f.write(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode())
 
 
