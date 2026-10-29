@@ -78,3 +78,14 @@ def test_status_counts(tmp_path):
     assert (st["first_run_date"], st["days_with_success"]) == ("2026-01-01", 2)
     assert (st["open"], st["new_today"], st["removed_today"]) == (2, 1, 1)
     json.dumps(st)
+
+def test_apply_day_without_an_index_matches_the_build(tmp_path):
+    history = {}
+    build.apply_day(history, "2026-01-01", SRC, [{**r, "in_role": True} for r in _rows([1, 2])], "2026-01-01")
+    build.apply_day(history, "2026-01-02", SRC, [{**r, "in_role": True} for r in _rows([1])], "2026-01-01")
+    assert history["acme:1"]["status"] == "open" and history["acme:2"]["status"] == "removed"
+    assert history["acme:2"]["removed_date"] == "2026-01-02"
+
+def _rows(ids):
+    from pipeline.normalize import convert
+    return convert([job(i) for i in ids], SRC)

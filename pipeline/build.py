@@ -16,8 +16,15 @@ DATA = ROOT / "data"
 RAW = DATA / "raw"
 
 
-def apply_day(history: dict, date: str, src: dict, rows: list[dict], first_date: str) -> None:
-    """Fold one source's listing for one day into the history (mutates `history`)."""
+def apply_day(history: dict, date: str, src: dict, rows: list[dict], first_date: str,
+              open_ids: set | None = None) -> None:
+    """Fold one source's listing for one day into the history (mutates `history`).
+
+    `open_ids` is the set of this source's open posting ids; the build passes one per source so a day
+    costs the size of that source, not of the whole history. Without it the history is scanned.
+    """
+    if open_ids is None:
+        open_ids = {pid for pid, old in history.items() if old["source"] == src["name"] and old["status"] == "open"}
     listed = set()
     for row in rows:
         pid = row["posting_id"]
@@ -33,10 +40,11 @@ def apply_day(history: dict, date: str, src: dict, rows: list[dict], first_date:
             old["last_seen"] = date
             old["status"] = "open"
             old["removed_date"] = ""
-    for pid, old in history.items():
-        if old["source"] == src["name"] and old["status"] == "open" and pid not in listed:
-            old["status"] = "removed"
-            old["removed_date"] = date
+        open_ids.add(pid)
+    for pid in open_ids - listed:
+        history[pid]["status"] = "removed"
+        history[pid]["removed_date"] = date
+    open_ids &= listed
 
 
 def raw_dates(raw_dir: Path = RAW) -> list[str]:
@@ -51,11 +59,13 @@ def build_history(raw_dir: Path = RAW, sources: list[dict] = SOURCES) -> list[di
             if (raw_dir / date / f"{src['name']}.json.gz").exists():
                 first_date.setdefault(src["name"], date)
     history: dict[str, dict] = {}
+    open_ids = {src["name"]: set() for src in sources}
     for date in dates:
         for src in sources:
             path = raw_dir / date / f"{src['name']}.json.gz"
             if path.exists():
-                apply_day(history, date, src, convert(read_raw(path), src), first_date[src["name"]])
+                apply_day(history, date, src, convert(read_raw(path), src), first_date[src["name"]],
+                          open_ids[src["name"]])
     return [history[k] for k in sorted(history)]
 
 
