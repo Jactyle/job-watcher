@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f3d2e"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Browse</title></head>
+<body><main><h1>Browse</h1><p class="sub" id="count">Loading…</p>
+<div class="controls">
+  <div class="seg"><button id="roleBtn" class="on">In role</button> <button id="allBtn">All postings</button></div>
+  <input id="q" type="search" placeholder="Search titles">
+  <select id="employer"><option value="">All employers</option></select>
+  <select id="location"><option value="">All locations</option></select>
+  <select id="days"><option value="">Any days open</option><option value="1">1 day or less</option><option value="7">7 days or less</option><option value="30">30 days or less</option><option value="31">More than 30 days</option></select>
+  <select id="sort"><option value="new">Newest first seen</option><option value="old">Oldest first seen</option></select>
+  <button id="starBtn">☆ Shortlist only</button>
+</div>
+<div id="list"></div><p><button id="more" hidden>Show more</button></p></main>
+<script src="app.js"></script>
+<script>
+const KEY = "job-watcher-shortlist";
+let saved = new Set();
+try { saved = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
+const persist = () => { try { localStorage.setItem(KEY, JSON.stringify([...saved])); } catch (e) {} };
+const $ = id => document.getElementById(id);
+let open = [], today = "", inRoleOnly = true, starOnly = false, limit = 100;
+
+function fill(sel, values) {
+  const cur = sel.value;
+  [...new Set(values)].filter(Boolean).sort((a, b) => a.localeCompare(b)).forEach(v => sel.insertAdjacentHTML("beforeend", `<option>${esc(v)}</option>`));
+  sel.value = cur;
+}
+function render() {
+  const q = $("q").value.trim().toLowerCase(), emp = $("employer").value, loc = $("location").value, d = $("days").value;
+  let rs = open.filter(r => (!inRoleOnly || r.in_role) && (!emp || r.employer === emp) && (!loc || r.location === loc) &&
+    (!q || r.title.toLowerCase().includes(q)) && (!starOnly || saved.has(r.posting_id)));
+  if (d) rs = rs.filter(r => { const n = dayNum(today) - dayNum(r.first_seen); return d === "31" ? n > 30 : n <= +d; });
+  const dir = $("sort").value === "old" ? 1 : -1;
+  rs.sort((a, b) => dir * a.first_seen.localeCompare(b.first_seen) || a.posting_id.localeCompare(b.posting_id));
+  $("count").textContent = `${plural(rs.length, "open posting")}${inRoleOnly ? " in role" : ""}`;
+  $("list").innerHTML = rs.slice(0, limit).map(r => `<div class="row">
+    <button class="star${saved.has(r.posting_id) ? " on" : ""}" data-id="${esc(r.posting_id)}" aria-label="Shortlist" title="Shortlist">${saved.has(r.posting_id) ? "★" : "☆"}</button>
+    <div class="body"><strong>${esc(r.title)}</strong><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"} · first seen ${esc(r.first_seen)}${r.first_run ? " (already open at first run)" : ""}</div></div>
+    <a class="apply" href="${esc(r.url)}" rel="noopener" target="_blank">Apply →</a></div>`).join("") || '<p class="meta">No postings match.</p>';
+  $("more").hidden = rs.length <= limit;
+}
+loadData().then(({ rows, status }) => {
+  today = lastRunDate(status);
+  open = rows.filter(r => r.status === "open");
+  fill($("employer"), open.map(r => r.employer)); fill($("location"), open.map(r => r.location));
+  ["q", "employer", "location", "days", "sort"].forEach(id => $(id).addEventListener("input", () => { limit = 100; render(); }));
+  $("roleBtn").onclick = () => { inRoleOnly = true; $("roleBtn").classList.add("on"); $("allBtn").classList.remove("on"); limit = 100; render(); };
+  $("allBtn").onclick = () => { inRoleOnly = false; $("allBtn").classList.add("on"); $("roleBtn").classList.remove("on"); limit = 100; render(); };
+  $("starBtn").onclick = () => { starOnly = !starOnly; $("starBtn").classList.toggle("on", starOnly); limit = 100; render(); };
+  $("more").onclick = () => { limit += 200; render(); };
+  $("list").addEventListener("click", e => {
+    const b = e.target.closest(".star"); if (!b) return;
+    const id = b.dataset.id; saved.has(id) ? saved.delete(id) : saved.add(id); persist(); render();
+  });
+  render();
+}).catch(showError);
+</script></body></html>
