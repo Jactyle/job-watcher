@@ -35,7 +35,7 @@ function render() {
   $("list").innerHTML = rs.slice(0, limit).map(r => `<div class="row">
     <button class="star${saved.has(r.posting_id) ? " on" : ""}" data-id="${esc(r.posting_id)}" aria-label="Shortlist" title="Shortlist">${saved.has(r.posting_id) ? "★" : "☆"}</button>
     <div class="body"><strong>${esc(r.title)}</strong><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"} · first seen ${esc(r.first_seen)}${r.first_run ? " (already open at first run)" : ""}</div></div>
-    <a class="apply" href="${esc(r.url)}" rel="noopener" target="_blank">Apply →</a></div>`).join("") || '<p class="meta">No postings match.</p>';
+    <a class="apply" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">Apply →</a></div>`).join("") || '<p class="meta">No postings match.</p>';
   $("more").hidden = rs.length <= limit;
 }
 loadData().then(({ rows, status }) => {

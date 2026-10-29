@@ -16,7 +16,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `pipeline/rules.py` | The title rule (`in_role`). |
 | `pipeline/build.py` | Builds `data/history.csv` from the raw files alone and computes `data/status.json`. |
 | `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. |
-| `pipeline/run.py` | One daily run: fetch, save raw, build, write status, open the issue. |
+| `pipeline/run.py` | One daily run: fetch all sources in parallel, save raw, build, write status, open the issue. A failed source or issue step never stops the commit. |
 | `tests/` | pytest suite: source conversion, title rule, first-seen/last-seen/removed logic, issue text. |
 | `.github/workflows/daily.yml` | Runs the pipeline once a day (09:17 UTC) and commits `data/`. |
 | `.github/workflows/tests.yml` | Runs pytest on every push; its badge is above. |
@@ -40,7 +40,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | servicenow | ServiceNow | SmartRecruiters (`api.smartrecruiters.com`) |
 | fidelity, mastercard, capitalone, nvidia | Fidelity Investments, Mastercard, Capital One, NVIDIA | Workday (`/wday/cxs/.../jobs`) |
 
-No board returns more than 5,000 postings, so no search term is used (`SEARCH_TERMS` in `pipeline/sources.py` is empty and is where one would go). Every posting a board returns is kept, not only ones in role. Workday gives only relative dates ("Posted 3 Days Ago"), so `posted_date` is empty for those rows, as is `department` for Greenhouse and Workday.
+No board returns more than 5,000 postings, so no search term is used (`SEARCH_TERMS` in `pipeline/sources.py` is empty and is where one would go). Every posting a board returns is kept, not only ones in role. Workday serves at most 2,000 results per query, so a capped Workday board (NVIDIA, Capital One) is re-queried once per job family, then worker type and location, until every posting is collected. Workday gives only relative dates ("Posted 3 Days Ago"), so `posted_date` is empty for those rows, as is `department` for Greenhouse and Workday.
 
 ## Title rule
 

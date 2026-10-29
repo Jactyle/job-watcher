@@ -7,7 +7,7 @@ loadData().then(({ rows, status }) => {
   const fresh = rows.filter(r => r.first_seen === day && !r.first_run);
   const gone = rows.filter(r => r.removed_date === day);
   const stat = (n, l) => `<div class="card stat"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`;
-  const item = r => `<li>${r.in_role ? '<span class="tag">in role</span>' : ""}<a href="${esc(r.url)}" rel="noopener">${esc(r.title)}</a><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></li>`;
+  const item = r => `<li>${r.in_role ? '<span class="tag">in role</span>' : ""}<a href="${esc(safeUrl(r.url))}" rel="noopener">${esc(r.title)}</a><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></li>`;
   const list = (rs) => rs.length ? `<ul class="list">${rs.sort((a, b) => b.in_role - a.in_role || a.employer.localeCompare(b.employer)).map(item).join("")}</ul>` : '<p class="meta">None in the latest run.</p>';
   document.getElementById("main").innerHTML = `
     <h1>Today</h1>
