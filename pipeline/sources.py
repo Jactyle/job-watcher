@@ -173,8 +173,7 @@ def _throttled(url, attempts=60, wait=1.5):
     raise RuntimeError(f"still throttled after {attempts} attempts: {url}")
 
 
-def fetch_eightfold(src):
-    """Eightfold career sites (Microsoft): 10 positions per page."""
+def _eightfold_pass(src):
     positions, start, total = [], 0, None
     while total is None or start < total:
         page = _throttled(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}")["data"]
@@ -183,7 +182,19 @@ def fetch_eightfold(src):
             break
         positions.extend(page["positions"])
         start += len(page["positions"])
-    return {"count": total, "positions": positions}
+    return positions, total
+
+
+def fetch_eightfold(src, budget=600):
+    """Eightfold career sites (Microsoft): 10 positions per page. The list shifts while it is being
+    paged, which skips a few postings, so crawl again (time permitting) and keep the union."""
+    started = time.time()
+    positions, total = _eightfold_pass(src)
+    if len({p["id"] for p in positions}) < total and time.time() - started < budget:
+        seen = {p["id"] for p in positions}
+        positions += [p for p in _eightfold_pass(src)[0] if p["id"] not in seen]
+    unique = {p["id"]: p for p in positions}
+    return {"count": total, "positions": list(unique.values())}
 
 
 def fetch_jibe(src):
