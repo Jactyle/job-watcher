@@ -1,0 +1,130 @@
+{
+  "run_time": "2026-10-29T19:33:47Z",
+  "first_run_date": "2026-10-29",
+  "days_with_success": 1,
+  "open": 10934,
+  "new_today": 0,
+  "removed_today": 0,
+  "sources": [
+    {
+      "name": "robinhood",
+      "ok": true,
+      "count": 165
+    },
+    {
+      "name": "coinbase",
+      "ok": true,
+      "count": 232
+    },
+    {
+      "name": "stripe",
+      "ok": true,
+      "count": 732
+    },
+    {
+      "name": "affirm",
+      "ok": true,
+      "count": 238
+    },
+    {
+      "name": "brex",
+      "ok": true,
+      "count": 262
+    },
+    {
+      "name": "mercury",
+      "ok": true,
+      "count": 77
+    },
+    {
+      "name": "chime",
+      "ok": true,
+      "count": 72
+    },
+    {
+      "name": "carta",
+      "ok": true,
+      "count": 77
+    },
+    {
+      "name": "toast",
+      "ok": true,
+      "count": 332
+    },
+    {
+      "name": "sofi",
+      "ok": true,
+      "count": 64
+    },
+    {
+      "name": "gusto",
+      "ok": true,
+      "count": 88
+    },
+    {
+      "name": "betterment",
+      "ok": true,
+      "count": 26
+    },
+    {
+      "name": "databricks",
+      "ok": true,
+      "count": 908
+    },
+    {
+      "name": "airbnb",
+      "ok": true,
+      "count": 192
+    },
+    {
+      "name": "palantir",
+      "ok": true,
+      "count": 302
+    },
+    {
+      "name": "spotify",
+      "ok": true,
+      "count": 89
+    },
+    {
+      "name": "ramp",
+      "ok": true,
+      "count": 168
+    },
+    {
+      "name": "notion",
+      "ok": true,
+      "count": 144
+    },
+    {
+      "name": "openai",
+      "ok": true,
+      "count": 812
+    },
+    {
+      "name": "servicenow",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "fidelity",
+      "ok": true,
+      "count": 809
+    },
+    {
+      "name": "mastercard",
+      "ok": true,
+      "count": 1106
+    },
+    {
+      "name": "capitalone",
+      "ok": true,
+      "count": 2039
+    },
+    {
+      "name": "nvidia",
+      "ok": true,
+      "count": 2000
+    }
+  ]
+}
