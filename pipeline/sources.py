@@ -104,14 +104,17 @@ def fetch_smartrecruiters(src):
     return {"totalFound": total, "content": content}
 
 
-def fetch_workday(src):
-    url = f"https://{src['host']}/wday/cxs/{src['tenant']}/{src['site']}/jobs"
-    term = SEARCH_TERMS.get(src["name"], "")
-    postings, seen, offset, total = [], set(), 0, None
-    while total is None or offset < total:
-        page = _request(url, {"appliedFacets": {}, "limit": 20, "offset": offset, "searchText": term})
+WORKDAY_CAP = 2000  # Workday serves at most 2,000 results per query
+WORKDAY_SPLITS = ["jobFamilyGroup", "workerSubType", "locationMainGroup"]
+
+
+def _workday_query(url, facets, term, seen, postings, splits):
+    """Page through one query; if it hits the cap, re-query once per value of the next facet."""
+    offset, total, first = 0, None, None
+    while total is None or offset < min(total, WORKDAY_CAP):
+        page = _request(url, {"appliedFacets": facets, "limit": 20, "offset": offset, "searchText": term})
         if total is None:  # Workday reports the total on the first page only
-            total = page["total"]
+            total, first = page["total"], page
         items = page.get("jobPostings", [])
         if not items:
             break
@@ -120,9 +123,23 @@ def fetch_workday(src):
                 seen.add(item["externalPath"])
                 postings.append(item)
         offset += len(items)
+    if total >= WORKDAY_CAP and splits:
+        facet = next((f for f in first.get("facets", []) if f["facetParameter"] == splits[0]), None)
+        if facet is None:
+            return total
+        for value in facet.get("values", []):
+            if "id" in value:
+                _workday_query(url, {**facets, splits[0]: [value["id"]]}, term, seen, postings, splits[1:])
+    return total
+
+
+def fetch_workday(src):
+    url = f"https://{src['host']}/wday/cxs/{src['tenant']}/{src['site']}/jobs"
+    postings, seen = [], set()
+    total = _workday_query(url, {}, SEARCH_TERMS.get(src["name"], ""), seen, postings, WORKDAY_SPLITS)
     if total and not postings:
         raise RuntimeError("workday returned a total but no postings")
-    return {"total": total, "jobPostings": postings}
+    return {"total": len(postings), "jobPostings": postings}
 
 
 FETCHERS = {
