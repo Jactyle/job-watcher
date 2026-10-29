@@ -49,7 +49,7 @@ SEARCH_TERMS: dict[str, str] = {}
 # Large free-text fields that are not needed; dropped so the committed raw files stay small.
 DROP_KEYS = {"descriptionHtml", "descriptionPlain", "description", "descriptionBody",
              "descriptionBodyPlain", "additional", "additionalPlain", "lists", "opening",
-             "openingPlain", "content"}
+             "openingPlain"}
 
 
 def _request(url, data=None, retries=3):
