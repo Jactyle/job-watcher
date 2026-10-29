@@ -1,15 +1,15 @@
 {
-  "run_time": "2026-10-29T20:25:33Z",
+  "run_time": "2026-10-29T21:18:52Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 1,
-  "open": 12407,
+  "open": 17645,
   "new_today": 0,
   "removed_today": 0,
   "sources": [
     {
       "name": "robinhood",
       "ok": true,
-      "count": 166
+      "count": 167
     },
     {
       "name": "coinbase",
@@ -19,7 +19,7 @@
     {
       "name": "stripe",
       "ok": true,
-      "count": 731
+      "count": 732
     },
     {
       "name": "affirm",
@@ -29,7 +29,7 @@
     {
       "name": "brex",
       "ok": true,
-      "count": 265
+      "count": 264
     },
     {
       "name": "mercury",
@@ -49,7 +49,7 @@
     {
       "name": "toast",
       "ok": true,
-      "count": 335
+      "count": 337
     },
     {
       "name": "sofi",
@@ -69,12 +69,12 @@
     {
       "name": "databricks",
       "ok": true,
-      "count": 909
+      "count": 906
     },
     {
       "name": "airbnb",
       "ok": true,
-      "count": 192
+      "count": 196
     },
     {
       "name": "palantir",
@@ -102,6 +102,76 @@
       "count": 812
     },
     {
+      "name": "epicgames",
+      "ok": true,
+      "count": 141
+    },
+    {
+      "name": "riotgames",
+      "ok": true,
+      "count": 184
+    },
+    {
+      "name": "roblox",
+      "ok": true,
+      "count": 268
+    },
+    {
+      "name": "discord",
+      "ok": true,
+      "count": 44
+    },
+    {
+      "name": "taketwo",
+      "ok": true,
+      "count": 36
+    },
+    {
+      "name": "rockstargames",
+      "ok": true,
+      "count": 24
+    },
+    {
+      "name": "bungie",
+      "ok": true,
+      "count": 5
+    },
+    {
+      "name": "scopely",
+      "ok": true,
+      "count": 178
+    },
+    {
+      "name": "twitch",
+      "ok": true,
+      "count": 60
+    },
+    {
+      "name": "cloudflare",
+      "ok": true,
+      "count": 463
+    },
+    {
+      "name": "supercell",
+      "ok": true,
+      "count": 35
+    },
+    {
+      "name": "ubisoft",
+      "ok": true,
+      "count": 313
+    },
+    {
+      "name": "microsoft",
+      "ok": true,
+      "count": 2393
+    },
+    {
+      "name": "amd",
+      "ok": true,
+      "count": 1289
+    },
+    {
       "name": "servicenow",
       "ok": true,
       "count": 745
@@ -109,12 +179,12 @@
     {
       "name": "fidelity",
       "ok": true,
-      "count": 811
+      "count": 810
     },
     {
       "name": "mastercard",
-      "ok": true,
-      "count": 1105
+      "ok": false,
+      "count": 0
     },
     {
       "name": "capitalone",
@@ -122,9 +192,19 @@
       "count": 2038
     },
     {
+      "name": "sony",
+      "ok": true,
+      "count": 124
+    },
+    {
+      "name": "intel",
+      "ok": true,
+      "count": 784
+    },
+    {
       "name": "nvidia",
       "ok": true,
-      "count": 2721
+      "count": 2720
     }
   ]
 }
