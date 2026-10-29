@@ -1,8 +1,8 @@
 {
-  "run_time": "2026-10-29T21:25:15Z",
+  "run_time": "2026-10-29T21:32:30Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 1,
-  "open": 18722,
+  "open": 18763,
   "new_today": 0,
   "removed_today": 0,
   "sources": [
@@ -109,7 +109,7 @@
     {
       "name": "riotgames",
       "ok": true,
-      "count": 184
+      "count": 183
     },
     {
       "name": "roblox",
@@ -164,7 +164,7 @@
     {
       "name": "microsoft",
       "ok": true,
-      "count": 2374
+      "count": 2417
     },
     {
       "name": "amd",
@@ -174,7 +174,7 @@
     {
       "name": "servicenow",
       "ok": true,
-      "count": 745
+      "count": 744
     },
     {
       "name": "fidelity",
