@@ -137,8 +137,9 @@ def _workday_query(url, facets, term, seen, postings, splits):
         if not items:
             break
         for item in items:
-            if item["externalPath"] not in seen:
-                seen.add(item["externalPath"])
+            path = item.get("externalPath")  # a few entries have no path (no page to link to): skip them
+            if path and path not in seen:
+                seen.add(path)
                 postings.append(item)
         offset += len(items)
     if total >= WORKDAY_CAP and splits:
