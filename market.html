@@ -1,0 +1,87 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f3d2e"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Market</title></head>
+<body><main id="main"><h1>Market</h1><p class="sub">Loading…</p></main>
+<script src="app.js"></script>
+<script>
+const C = { all: "#1f8a5b", role: "#c9822b", bar: "#1f8a5b", bar2: "#c9822b" };
+const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : null; };
+const dayStr = n => new Date(n * 86400000).toISOString().slice(0, 10);
+
+// Vertical bars; series is [{name,color,values}] aligned with labels.
+function barChart(labels, series, fmt = v => v) {
+  if (!labels.length) return '<p class="meta">Not enough history yet.</p>';
+  const W = 720, H = 240, L = 40, B = 46, T = 10, n = labels.length, k = series.length;
+  const max = Math.max(1, ...series.flatMap(s => s.values));
+  const slot = (W - L) / n, bw = Math.max(2, Math.min(40, slot * 0.8 / k));
+  let out = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let i = 0; i <= 4; i++) {
+    const y = T + (H - T - B) * (1 - i / 4);
+    out += `<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(Math.round(max * i / 4 * 10) / 10)}</text>`;
+  }
+  const every = Math.ceil(n / 12);
+  labels.forEach((lb, i) => {
+    const x0 = L + i * slot + (slot - bw * k) / 2;
+    series.forEach((s, j) => {
+      const h = (H - T - B) * s.values[i] / max;
+      out += `<rect x="${x0 + j * bw}" y="${H - B - h}" width="${bw - 1}" height="${h}" fill="${s.color}"><title>${esc(lb)}: ${s.values[i]}</title></rect>`;
+    });
+    if (i % every === 0) out += `<text x="${L + i * slot + slot / 2}" y="${H - B + 14}" text-anchor="end" transform="rotate(-35 ${L + i * slot + slot / 2} ${H - B + 14})">${esc(lb.length > 14 ? lb.slice(0, 13) + "…" : lb)}</text>`;
+  });
+  const legend = k > 1 ? `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>` : "";
+  return legend + out + "</svg>";
+}
+const tally = (rs, key) => rs.reduce((m, r) => (m.set(r[key], (m.get(r[key]) || 0) + 1), m), new Map());
+const section = (h, p, chart) => `<div class="section"><h2>${h}</h2><p>${p}</p>${chart}</div>`;
+
+loadData().then(({ rows, status }) => {
+  const last = lastRunDate(status), lastN = dayNum(last), first = status.first_run_date;
+  const watched = status.days_with_success;
+  const fresh = rows.filter(r => !r.first_run);
+  // Axis of every date from the first run to the last run so quiet days show as zero.
+  const days = []; for (let d = dayNum(first); d <= lastN; d++) days.push(dayStr(d));
+  const perDay = (rs, key) => { const m = tally(rs, key); return days.map(d => m.get(d) || 0); };
+
+  // 1 new per day
+  const newAll = perDay(fresh, "first_seen"), newRole = perDay(fresh.filter(r => r.in_role), "first_seen");
+  const s1 = section(
+    `${plural(newAll.reduce((a, b) => a + b, 0), "new posting")} since the first run, ${newRole.reduce((a, b) => a + b, 0)} in role`,
+    "Postings first seen on each day. Postings that were already open when a source was first watched are left out, because their real start date is unknown.",
+    barChart(days, [{ name: "All postings", color: C.all, values: newAll }, { name: "In role", color: C.role, values: newRole }]));
+
+  // 2 removed per day
+  const gone = rows.filter(r => r.removed_date);
+  const rem = perDay(gone, "removed_date");
+  const s2 = section(`${plural(gone.length, "posting")} removed so far`,
+    "Postings whose source stopped listing them, counted on the day the removal was noticed.",
+    barChart(days, [{ name: "Removed", color: C.bar2, values: rem }]));
+
+  // 3 open per employer
+  const open = rows.filter(r => r.status === "open");
+  const byEmp = [...tally(open, "employer")].sort((a, b) => b[1] - a[1]);
+  const s3 = section(`${byEmp.length ? esc(byEmp[0][0]) : "No employer"} has the most open postings${byEmp.length ? " (" + byEmp[0][1].toLocaleString() + ")" : ""}`,
+    `Open postings per employer as of the last run (${esc(last)}); ${open.length.toLocaleString()} open in total.`,
+    barChart(byEmp.map(e => e[0]), [{ name: "Open", color: C.bar, values: byEmp.map(e => e[1]) }]));
+
+  // 4 days open, 5 share removed within seven days
+  const spans = gone.filter(r => !r.first_run).map(r => dayNum(r.removed_date) - dayNum(r.first_seen));
+  const med = median(spans);
+  const buckets = [["0-1", 0, 1], ["2-3", 2, 3], ["4-7", 4, 7], ["8-14", 8, 14], ["15-30", 15, 30], ["31+", 31, 1e9]];
+  const s4 = section(med === null ? "No removed postings with a known start date yet" : `Postings stay open a median of ${med} days`,
+    `Removed postings that were not open at the first run, measured as removed date minus first-seen date (${plural(spans.length, "posting")}).`,
+    barChart(spans.length ? buckets.map(b => b[0]) : [], [{ name: "Postings", color: C.bar, values: buckets.map(([, lo, hi]) => spans.filter(v => v >= lo && v <= hi).length) }]));
+  const eligible = fresh.filter(r => lastN - dayNum(r.first_seen) >= 7);
+  const fast = eligible.filter(r => r.removed_date && dayNum(r.removed_date) - dayNum(r.first_seen) <= 7);
+  const share = eligible.length ? fast.length / eligible.length : null;
+  const s5 = section(share === null ? "Not enough history for the seven-day share yet" : `${(share * 100).toFixed(1)}% of postings are removed within seven days`,
+    `Among ${plural(eligible.length, "posting")} that were not open at the first run and were first seen at least seven days before the last run, ${fast.length.toLocaleString()} were removed within seven days.`,
+    share === null ? '<p class="meta">Not enough history yet.</p>' : barChart(["Removed within 7 days", "Still open or later"], [{ name: "Postings", color: C.bar, values: [fast.length, eligible.length - fast.length] }]));
+
+  // 6 top locations among open
+  const locs = [...tally(open.filter(r => r.location), "location")].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const s6 = section(locs.length ? `${esc(locs[0][0])} is the top location` : "No locations yet",
+    "The twelve most common locations among open postings, as the employers write them.",
+    barChart(locs.map(l => l[0]), [{ name: "Open", color: C.bar, values: locs.map(l => l[1]) }]));
+
+  document.getElementById("main").innerHTML = `<h1>Market</h1>
+    <p class="sub">Computed in your browser from data/history.csv · ${watched} days of history, last run ${esc(last)}</p>${s1}${s2}${s3}${s4}${s5}${s6}`;
+}).catch(showError);
+</script></body></html>
