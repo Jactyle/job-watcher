@@ -87,3 +87,34 @@ def test_jibe():
     assert (r["source_id"], r["location"], r["department"]) == ("95700", "CALGARY, Canada", "Engineering")
     assert r["url"] == "https://careers.example.com/careers-home/jobs/95700"
     assert r["posted_date"] == "2026-10-29"
+
+
+def test_eightfold_apply():
+    raw = {"positions": [{"id": 790298014263, "name": "Data Analyst", "location": "Los Gatos,California,United States",
+                          "department": "Data & Insights", "t_create": 1721692800,
+                          "canonicalPositionUrl": "https://n.example.com/careers/job/790298014263"}]}
+    [r] = convert(raw, src("eightfold_apply", host="n.example.com"))
+    check(r)
+    assert (r["source_id"], r["department"], r["posted_date"]) == ("790298014263", "Data & Insights", "2024-07-23")
+    assert r["url"] == "https://n.example.com/careers/job/790298014263" and r["in_role"] is True
+
+
+def test_apple():
+    raw = {"searchResults": [{"positionId": "200692348", "postingTitle": "Data Analyst, Maps",
+                              "transformedPostingTitle": "data-analyst-maps", "team": {"teamName": "Software"},
+                              "locations": [{"name": "Cupertino"}, {"name": "Austin"}],
+                              "postDateInGMT": "2026-10-29T21:40:52.612787842Z"}]}
+    [r] = convert(raw, src("apple"))
+    check(r)
+    assert r["location"] == "Cupertino; Austin" and r["department"] == "Software"
+    assert r["url"] == "https://jobs.apple.com/en-us/details/200692348/data-analyst-maps"
+    assert r["posted_date"] == "2026-10-29"
+
+
+def test_amazon():
+    raw = {"jobs": [{"id_icims": "10500379", "title": "Business Analyst", "normalized_location": "Seattle, Washington, USA",
+                     "job_category": "Finance", "posted_date": "August 12, 2026", "job_path": "/en/jobs/10500379/ba"}]}
+    [r] = convert(raw, src("amazon"))
+    check(r)
+    assert r["posted_date"] == "2026-08-12" and r["url"] == "https://www.amazon.jobs/en/jobs/10500379/ba"
+    assert (r["location"], r["department"]) == ("Seattle, Washington, USA", "Finance")

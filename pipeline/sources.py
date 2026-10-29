@@ -51,6 +51,10 @@ SOURCES = [
     {"name": "ubisoft", "employer": "Ubisoft", "ats": "smartrecruiters", "board": "Ubisoft2"},
     {"name": "microsoft", "employer": "Microsoft", "ats": "eightfold", "host": "apply.careers.microsoft.com",
      "domain": "microsoft.com", "board": "microsoft"},
+    {"name": "netflix", "employer": "Netflix", "ats": "eightfold_apply", "host": "explore.jobs.netflix.net",
+     "domain": "netflix.com", "board": "netflix"},
+    {"name": "apple", "employer": "Apple", "ats": "apple", "board": "apple"},
+    {"name": "amazon", "employer": "Amazon", "ats": "amazon", "board": "amazon"},
     {"name": "amd", "employer": "AMD", "ats": "jibe", "host": "careers.amd.com", "board": "amd"},
     {"name": "servicenow", "employer": "ServiceNow", "ats": "smartrecruiters", "board": "ServiceNow"},
     _wd("fidelity", "Fidelity Investments", "fmr.wd1.myworkdayjobs.com", "fmr", "FidelityCareers"),
@@ -58,16 +62,24 @@ SOURCES = [
     _wd("capitalone", "Capital One", "capitalone.wd12.myworkdayjobs.com", "capitalone", "Capital_One"),
     _wd("sony", "Sony", "sonyglobal.wd1.myworkdayjobs.com", "sonyglobal", "SonyGlobalCareers"),
     _wd("intel", "Intel", "intel.wd1.myworkdayjobs.com", "intel", "External"),
+    _wd("samsung", "Samsung", "sec.wd3.myworkdayjobs.com", "sec", "Samsung_Careers"),
+    _wd("adobe", "Adobe", "adobe.wd5.myworkdayjobs.com", "adobe", "external_experienced"),
+    _wd("cisco", "Cisco", "cisco.wd5.myworkdayjobs.com", "cisco", "Cisco_Careers"),
+    _wd("salesforce", "Salesforce", "salesforce.wd12.myworkdayjobs.com", "salesforce", "External_Career_Site"),
+    _wd("snap", "Snap", "snapchat.wd1.myworkdayjobs.com", "snapchat", "snap"),
+    _wd("hp", "HP", "hp.wd5.myworkdayjobs.com", "hp", "ExternalCareerSite"),
     _wd("nvidia", "NVIDIA", "nvidia.wd5.myworkdayjobs.com", "nvidia", "NVIDIAExternalCareerSite"),
 ]
 
 # A board with more than 5,000 postings must be requested with a search term (none is today).
-SEARCH_TERMS: dict[str, str] = {}
+SEARCH_TERMS: dict[str, str] = {"apple": "analyst", "amazon": "analyst"}
 
 # Large free-text fields that are not needed; dropped so the committed raw files stay small.
 DROP_KEYS = {"descriptionHtml", "descriptionPlain", "description", "descriptionBody",
              "descriptionBodyPlain", "additional", "additionalPlain", "lists", "opening",
-             "openingPlain", "responsibilities", "qualifications"}
+             "openingPlain", "responsibilities", "qualifications",
+             "jobSummary", "job_description", "basic_qualifications", "preferred_qualifications",
+             "description_short"}
 
 
 def _request(url, data=None, retries=3, backoff=2):
@@ -210,6 +222,48 @@ def fetch_jibe(src):
     return {"totalCount": total, "jobs": jobs}
 
 
+def fetch_eightfold_apply(src):
+    """Eightfold apply/v2 API (Netflix): 10 positions per page, top-level `positions`."""
+    positions, start, total = [], 0, None
+    while total is None or start < total:
+        page = _throttled(f"https://{src['host']}/api/apply/v2/jobs?domain={src['domain']}&start={start}&num=10")
+        total = page["count"]
+        if not page["positions"]:
+            break
+        positions.extend(page["positions"])
+        start += len(page["positions"])
+    return {"count": total, "positions": list({p["id"]: p for p in positions}.values())}
+
+
+def fetch_apple(src):
+    """Apple's search API (POST, 20 per page). Apple has over 5,000 postings, so a search term is used."""
+    results, page_no, total = [], 1, None
+    while total is None or len(results) < total:
+        page = _request("https://jobs.apple.com/api/v1/search", {
+            "query": SEARCH_TERMS.get(src["name"], ""), "filters": {}, "page": page_no, "locale": "en-us",
+            "sort": "", "format": {"longDate": "MMMM D, YYYY", "mediumDate": "MMM D, YYYY"}})["res"]
+        total = page["totalRecords"]
+        if not page["searchResults"]:
+            break
+        results.extend(page["searchResults"])
+        page_no += 1
+    return {"totalRecords": total, "searchResults": list({r["positionId"]: r for r in results}.values())}
+
+
+def fetch_amazon(src):
+    """amazon.jobs search.json (100 per page). Amazon has over 5,000 postings, so a search term is used."""
+    jobs, offset, hits = [], 0, None
+    term = SEARCH_TERMS.get(src["name"], "")
+    while hits is None or offset < hits:
+        page = _request(f"https://www.amazon.jobs/en/search.json?result_limit=100&offset={offset}&base_query={term}")
+        hits = page["hits"]
+        if not page["jobs"]:
+            break
+        jobs.extend(page["jobs"])
+        offset += len(page["jobs"])
+    return {"hits": hits, "jobs": list({j["id_icims"]: j for j in jobs}.values())}
+
+
 FETCHERS = {
     "greenhouse": fetch_greenhouse,
     "lever": fetch_lever,
@@ -218,6 +272,9 @@ FETCHERS = {
     "workday": fetch_workday,
     "eightfold": fetch_eightfold,
     "jibe": fetch_jibe,
+    "eightfold_apply": fetch_eightfold_apply,
+    "apple": fetch_apple,
+    "amazon": fetch_amazon,
 }
 
 

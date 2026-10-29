@@ -24,6 +24,7 @@ def _date_from_iso(value) -> str:
     if not value:
         return ""
     text = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", str(value).replace("Z", "+00:00"))  # "+0000" -> "+00:00"
+    text = re.sub(r"(\.\d{6})\d+", r"\1", text)  # keep at most microseconds
     try:
         dt = datetime.fromisoformat(text)
     except ValueError:
@@ -146,6 +147,49 @@ def jibe(raw: dict, src: dict) -> list[dict]:
     return rows
 
 
+def eightfold_apply(raw: dict, src: dict) -> list[dict]:
+    rows = []
+    for j in raw.get("positions", []):
+        rows.append(_row(
+            src, j["id"], j.get("name") or j.get("posting_name"), j.get("location"), j.get("department"),
+            _date_from_ms(int(j["t_create"]) * 1000) if j.get("t_create") else "",
+            j.get("canonicalPositionUrl") or f"https://{src['host']}/careers/job/{j['id']}",
+        ))
+    return rows
+
+
+def apple(raw: dict, src: dict) -> list[dict]:
+    rows = []
+    for j in raw.get("searchResults", []):
+        locs = "; ".join(l.get("name") or l.get("city") or "" for l in j.get("locations") or [])
+        pid = j.get("positionId") or j.get("id")
+        rows.append(_row(
+            src, pid, j.get("postingTitle"), locs, (j.get("team") or {}).get("teamName"),
+            _date_from_iso(j.get("postDateInGMT")),
+            f"https://jobs.apple.com/en-us/details/{pid}/{j.get('transformedPostingTitle') or ''}".rstrip("/"),
+        ))
+    return rows
+
+
+def _date_from_text(value) -> str:
+    """'August 12, 2026' -> '2026-08-12'."""
+    try:
+        return datetime.strptime(str(value), "%B %d, %Y").strftime("%Y-%m-%d")
+    except ValueError:
+        return ""
+
+
+def amazon(raw: dict, src: dict) -> list[dict]:
+    rows = []
+    for j in raw.get("jobs", []):
+        rows.append(_row(
+            src, j.get("id_icims") or j.get("id"), j.get("title"),
+            j.get("normalized_location") or j.get("location"), j.get("job_category"),
+            _date_from_text(j.get("posted_date")), f"https://www.amazon.jobs{j.get('job_path') or ''}",
+        ))
+    return rows
+
+
 CONVERTERS = {
     "greenhouse": greenhouse,
     "lever": lever,
@@ -154,6 +198,9 @@ CONVERTERS = {
     "workday": workday,
     "eightfold": eightfold,
     "jibe": jibe,
+    "eightfold_apply": eightfold_apply,
+    "apple": apple,
+    "amazon": amazon,
 }
 
 

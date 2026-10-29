@@ -3,7 +3,7 @@
 [![tests](https://github.com/Jactyle/job-watcher/actions/workflows/tests.yml/badge.svg)](https://github.com/Jactyle/job-watcher/actions/workflows/tests.yml)
 [![daily](https://github.com/Jactyle/job-watcher/actions/workflows/daily.yml/badge.svg)](https://github.com/Jactyle/job-watcher/actions/workflows/daily.yml)
 
-Watches the open positions at 40 tech, video game and fintech employers for the roles **financial analyst** and **data analyst**. Every day GitHub Actions pulls each employer's job board (anonymous JSON, no HTML), records what is new and what is gone, opens a GitHub Issue with the changes, and publishes the result to GitHub Pages.
+Watches the open positions at 49 tech, video game and fintech employers for the roles **financial analyst** and **data analyst**. Every day GitHub Actions pulls each employer's job board (anonymous JSON, no HTML), records what is new and what is gone, opens a GitHub Issue with the changes, and publishes the result to GitHub Pages.
 
 Live site: https://jactyle.github.io/job-watcher/
 
@@ -40,10 +40,13 @@ Live site: https://jactyle.github.io/job-watcher/
 | ramp, notion, openai, supercell | Ramp, Notion, OpenAI, Supercell | Ashby (`api.ashbyhq.com`) |
 | servicenow, ubisoft | ServiceNow, Ubisoft | SmartRecruiters (`api.smartrecruiters.com`) |
 | microsoft | Microsoft (includes Xbox, Activision, Blizzard) | Eightfold (`apply.careers.microsoft.com/api/pcsx/search`) |
+| netflix | Netflix | Eightfold apply API (`explore.jobs.netflix.net/api/apply/v2/jobs`) |
 | amd | AMD | Jibe (`careers.amd.com/api/jobs`) |
-| fidelity, mastercard, capitalone, nvidia, sony, intel | Fidelity Investments, Mastercard, Capital One, NVIDIA, Sony, Intel | Workday (`/wday/cxs/.../jobs`) |
+| apple | Apple | Apple's own search API (`jobs.apple.com/api/v1/search`) |
+| amazon | Amazon | amazon.jobs search API (`amazon.jobs/en/search.json`) |
+| fidelity, mastercard, capitalone, nvidia, sony, intel, samsung, adobe, cisco, salesforce, snap, hp | Fidelity Investments, Mastercard, Capital One, NVIDIA, Sony, Intel, Samsung, Adobe, Cisco, Salesforce, Snap, HP | Workday (`/wday/cxs/.../jobs`) |
 
-Electronic Arts has no job board the tool can read anonymously, so it is not watched. Microsoft's API serves 10 postings per page and throttles with HTTP 429, so its fetch is slow (about 7 minutes) and retries after each 429. No board returns more than 5,000 postings, so no search term is used (`SEARCH_TERMS` in `pipeline/sources.py` is empty and is where one would go). Every posting a board returns is kept, not only ones in role. Workday serves at most 2,000 results per query, so a capped Workday board (NVIDIA, Capital One) is re-queried once per job family, then worker type and location, until every posting is collected. Workday gives only relative dates ("Posted 3 Days Ago"), so `posted_date` is empty for those rows, as is `department` for Greenhouse and Workday.
+Electronic Arts and Valve (Steam) have no job board the tool can read as JSON without a login (Valve's jobs page is HTML only), so they are not watched. Microsoft's API serves 10 postings per page and throttles with HTTP 429, so its fetch is slow (about 7 minutes) and retries after each 429. **Search term:** Apple (6,303 postings) and Amazon (over 5,000) return more than 5,000 postings, so both are requested with the search term **analyst**, set in `SEARCH_TERMS` in `pipeline/sources.py`. Every other board is read in full, and every posting a board returns is kept, not only ones in role. Workday serves at most 2,000 results per query, so a capped Workday board (NVIDIA, Capital One) is re-queried once per job family, then worker type and location, until every posting is collected. Workday gives only relative dates ("Posted 3 Days Ago"), so `posted_date` is empty for those rows, as is `department` for Greenhouse and Workday.
 
 ## Title rule
 
