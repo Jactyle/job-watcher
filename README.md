@@ -3,7 +3,7 @@
 [![tests](https://github.com/Jactyle/job-watcher/actions/workflows/tests.yml/badge.svg)](https://github.com/Jactyle/job-watcher/actions/workflows/tests.yml)
 [![daily](https://github.com/Jactyle/job-watcher/actions/workflows/daily.yml/badge.svg)](https://github.com/Jactyle/job-watcher/actions/workflows/daily.yml)
 
-Watches the open positions at 40 tech, video game and fintech employers for the role **financial analyst**. Every day GitHub Actions pulls each employer's job board (anonymous JSON, no HTML), records what is new and what is gone, opens a GitHub Issue with the changes, and publishes the result to GitHub Pages.
+Watches the open positions at 40 tech, video game and fintech employers for the roles **financial analyst** and **data analyst**. Every day GitHub Actions pulls each employer's job board (anonymous JSON, no HTML), records what is new and what is gone, opens a GitHub Issue with the changes, and publishes the result to GitHub Pages.
 
 Live site: https://jactyle.github.io/job-watcher/
 
@@ -47,7 +47,7 @@ Electronic Arts has no job board the tool can read anonymously, so it is not wat
 
 ## Title rule
 
-A title is **in role** when it contains the word *analyst* and a finance word (financ*, FP&A, accounting, treasury, credit, investment, revenue, pricing, budget*, forecast*, controller, audit*, equity, portfolio, valuation, capital markets, corporate development, business planning), and does not contain *intern*, *sales*, *recruit*, *support*, or *engineer*. Matching ignores case. See `pipeline/rules.py`.
+A title is **in role** when it contains the word *analyst*, plus a finance word (financ*, FP&A, accounting, treasury, credit, investment, revenue, pricing, budget*, forecast*, controller, audit*, equity, portfolio, valuation, capital markets, corporate development, business planning) or a data word (data but not data center, analytics, business intelligence, BI, insight(s), reporting, quantitative, product, game, gameplay, player), and does not contain *intern*, *sales*, *recruit*, *support*, or *engineer*. Matching ignores case. See `pipeline/rules.py`.
 
 ## Build the history from the raw files
 
