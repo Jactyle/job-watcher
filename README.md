@@ -11,13 +11,22 @@ Live site: https://jactyle.github.io/job-watcher/
 
 | File | What it does |
 |---|---|
+| `README.md` | This file. |
 | `pipeline/sources.py` | The watch list, one fetcher per ATS, and reading/writing the compressed raw files. |
 | `pipeline/normalize.py` | Converts each ATS's raw JSON into the common columns. |
 | `pipeline/rules.py` | The title rule (`in_role`). |
 | `pipeline/build.py` | Builds `data/history.csv` from the raw files alone and computes `data/status.json`. |
 | `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. |
 | `pipeline/run.py` | One daily run: fetch all sources in parallel, save raw, build, write status, open the issue. A failed source or issue step never stops the commit. |
-| `tests/` | pytest suite: source conversion, title rule, first-seen/last-seen/removed logic, issue text. |
+| `pipeline/__init__.py` | Marks `pipeline` as a Python package. |
+| `tests/test_normalize.py` | Conversion of every source type to the common columns. |
+| `tests/test_rules.py` | The title rule. |
+| `tests/test_build.py` | First-seen, last-seen, removed and reopened logic, `first_run`, sorting, reproducible rebuild, status counts. |
+| `tests/test_run.py` | A failed source is recorded and writes no raw file. |
+| `tests/test_sources.py`, `tests/test_workday_split.py`, `tests/test_eightfold.py` | Fetch helpers: raw file writing, Workday 2,000-result splitting, Microsoft second pass. |
+| `tests/test_issue.py` | The daily issue text. |
+| `requirements.txt` | Python dependency (pytest); the pipeline itself uses only the standard library. |
+| `.gitignore` | Keeps caches out of the repository. |
 | `.github/workflows/daily.yml` | Runs the pipeline once a day (09:17 UTC) and commits `data/`. |
 | `.github/workflows/tests.yml` | Runs pytest on every push; its badge is above. |
 | `data/raw/<date>/<source>.json.gz` | What each source returned that day (descriptions removed to keep files small). A failed source writes no file. |
