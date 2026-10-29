@@ -4,6 +4,7 @@ from __future__ import annotations
 import gzip
 import json
 import time
+import urllib.error
 import urllib.request
 
 UA = "job-watcher-student-project (github.com/Jactyle/job-watcher)"
@@ -36,10 +37,27 @@ SOURCES = [
     {"name": "ramp", "employer": "Ramp", "ats": "ashby", "board": "ramp"},
     {"name": "notion", "employer": "Notion", "ats": "ashby", "board": "notion"},
     {"name": "openai", "employer": "OpenAI", "ats": "ashby", "board": "openai"},
+    _gh("epicgames", "Epic Games", "epicgames"),
+    _gh("riotgames", "Riot Games", "riotgames"),
+    _gh("roblox", "Roblox", "roblox"),
+    _gh("discord", "Discord", "discord"),
+    _gh("taketwo", "Take-Two Interactive", "taketwo"),
+    _gh("rockstargames", "Rockstar Games", "rockstargames"),
+    _gh("bungie", "Bungie", "bungie"),
+    _gh("scopely", "Scopely", "scopely"),
+    _gh("twitch", "Twitch", "twitch"),
+    _gh("cloudflare", "Cloudflare", "cloudflare"),
+    {"name": "supercell", "employer": "Supercell", "ats": "ashby", "board": "supercell"},
+    {"name": "ubisoft", "employer": "Ubisoft", "ats": "smartrecruiters", "board": "Ubisoft2"},
+    {"name": "microsoft", "employer": "Microsoft", "ats": "eightfold", "host": "apply.careers.microsoft.com",
+     "domain": "microsoft.com", "board": "microsoft"},
+    {"name": "amd", "employer": "AMD", "ats": "jibe", "host": "careers.amd.com", "board": "amd"},
     {"name": "servicenow", "employer": "ServiceNow", "ats": "smartrecruiters", "board": "ServiceNow"},
     _wd("fidelity", "Fidelity Investments", "fmr.wd1.myworkdayjobs.com", "fmr", "FidelityCareers"),
     _wd("mastercard", "Mastercard", "mastercard.wd1.myworkdayjobs.com", "mastercard", "CorporateCareers"),
     _wd("capitalone", "Capital One", "capitalone.wd12.myworkdayjobs.com", "capitalone", "Capital_One"),
+    _wd("sony", "Sony", "sonyglobal.wd1.myworkdayjobs.com", "sonyglobal", "SonyGlobalCareers"),
+    _wd("intel", "Intel", "intel.wd1.myworkdayjobs.com", "intel", "External"),
     _wd("nvidia", "NVIDIA", "nvidia.wd5.myworkdayjobs.com", "nvidia", "NVIDIAExternalCareerSite"),
 ]
 
@@ -49,10 +67,10 @@ SEARCH_TERMS: dict[str, str] = {}
 # Large free-text fields that are not needed; dropped so the committed raw files stay small.
 DROP_KEYS = {"descriptionHtml", "descriptionPlain", "description", "descriptionBody",
              "descriptionBodyPlain", "additional", "additionalPlain", "lists", "opening",
-             "openingPlain"}
+             "openingPlain", "responsibilities", "qualifications"}
 
 
-def _request(url, data=None, retries=3):
+def _request(url, data=None, retries=3, backoff=2):
     headers = {"User-Agent": UA, "Accept": "application/json"}
     if data is not None:
         headers["Content-Type"] = "application/json"
@@ -65,7 +83,7 @@ def _request(url, data=None, retries=3):
                 return json.loads(resp.read().decode("utf-8"))
         except Exception as exc:  # noqa: BLE001 - retried, then re-raised
             last = exc
-            time.sleep(2 * (attempt + 1))
+            time.sleep(backoff * (attempt + 1))
     raise last
 
 
@@ -142,12 +160,52 @@ def fetch_workday(src):
     return {"total": len(postings), "jobPostings": postings}
 
 
+def _throttled(url, attempts=60, wait=1.5):
+    """GET that waits a short, fixed time after each 429 (Eightfold throttles in short bursts)."""
+    for _ in range(attempts):
+        try:
+            return _request(url, retries=1)
+        except urllib.error.HTTPError as exc:
+            if exc.code != 429:
+                raise
+            time.sleep(wait)
+    raise RuntimeError(f"still throttled after {attempts} attempts: {url}")
+
+
+def fetch_eightfold(src):
+    """Eightfold career sites (Microsoft): 10 positions per page."""
+    positions, start, total = [], 0, None
+    while total is None or start < total:
+        page = _throttled(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}")["data"]
+        total = page["count"]
+        if not page["positions"]:
+            break
+        positions.extend(page["positions"])
+        start += len(page["positions"])
+    return {"count": total, "positions": positions}
+
+
+def fetch_jibe(src):
+    """Jibe career sites (AMD): 100 jobs per page; the facet counts in the reply are not kept."""
+    jobs, page_no, total = [], 1, None
+    while total is None or len(jobs) < total:
+        page = _request(f"https://{src['host']}/api/jobs?limit=100&page={page_no}")
+        total = page["totalCount"]
+        if not page["jobs"]:
+            break
+        jobs.extend(page["jobs"])
+        page_no += 1
+    return {"totalCount": total, "jobs": jobs}
+
+
 FETCHERS = {
     "greenhouse": fetch_greenhouse,
     "lever": fetch_lever,
     "ashby": fetch_ashby,
     "smartrecruiters": fetch_smartrecruiters,
     "workday": fetch_workday,
+    "eightfold": fetch_eightfold,
+    "jibe": fetch_jibe,
 }
 
 

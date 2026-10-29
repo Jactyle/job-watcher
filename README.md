@@ -3,7 +3,7 @@
 [![tests](https://github.com/Jactyle/job-watcher/actions/workflows/tests.yml/badge.svg)](https://github.com/Jactyle/job-watcher/actions/workflows/tests.yml)
 [![daily](https://github.com/Jactyle/job-watcher/actions/workflows/daily.yml/badge.svg)](https://github.com/Jactyle/job-watcher/actions/workflows/daily.yml)
 
-Watches the open positions at 24 employers for the role **financial analyst**. Every day GitHub Actions pulls each employer's job board (anonymous JSON, no HTML), records what is new and what is gone, opens a GitHub Issue with the changes, and publishes the result to GitHub Pages.
+Watches the open positions at 40 tech, video game and fintech employers for the role **financial analyst**. Every day GitHub Actions pulls each employer's job board (anonymous JSON, no HTML), records what is new and what is gone, opens a GitHub Issue with the changes, and publishes the result to GitHub Pages.
 
 Live site: https://jactyle.github.io/job-watcher/
 
@@ -34,13 +34,16 @@ Live site: https://jactyle.github.io/job-watcher/
 
 | Source | Employer | ATS |
 |---|---|---|
-| robinhood, coinbase, stripe, affirm, brex, mercury, chime, carta, toast, sofi, gusto, betterment, databricks, airbnb | same names | Greenhouse (`boards-api.greenhouse.io`) |
+| robinhood, coinbase, stripe, affirm, brex, mercury, chime, carta, toast, sofi, gusto, betterment, databricks, airbnb, cloudflare | same names | Greenhouse (`boards-api.greenhouse.io`) |
+| epicgames, riotgames, roblox, discord, taketwo, rockstargames, bungie, scopely, twitch | Epic Games, Riot Games, Roblox, Discord, Take-Two Interactive, Rockstar Games, Bungie, Scopely, Twitch | Greenhouse |
 | palantir, spotify | Palantir, Spotify | Lever (`api.lever.co`) |
-| ramp, notion, openai | Ramp, Notion, OpenAI | Ashby (`api.ashbyhq.com`) |
-| servicenow | ServiceNow | SmartRecruiters (`api.smartrecruiters.com`) |
-| fidelity, mastercard, capitalone, nvidia | Fidelity Investments, Mastercard, Capital One, NVIDIA | Workday (`/wday/cxs/.../jobs`) |
+| ramp, notion, openai, supercell | Ramp, Notion, OpenAI, Supercell | Ashby (`api.ashbyhq.com`) |
+| servicenow, ubisoft | ServiceNow, Ubisoft | SmartRecruiters (`api.smartrecruiters.com`) |
+| microsoft | Microsoft (includes Xbox, Activision, Blizzard) | Eightfold (`apply.careers.microsoft.com/api/pcsx/search`) |
+| amd | AMD | Jibe (`careers.amd.com/api/jobs`) |
+| fidelity, mastercard, capitalone, nvidia, sony, intel | Fidelity Investments, Mastercard, Capital One, NVIDIA, Sony, Intel | Workday (`/wday/cxs/.../jobs`) |
 
-No board returns more than 5,000 postings, so no search term is used (`SEARCH_TERMS` in `pipeline/sources.py` is empty and is where one would go). Every posting a board returns is kept, not only ones in role. Workday serves at most 2,000 results per query, so a capped Workday board (NVIDIA, Capital One) is re-queried once per job family, then worker type and location, until every posting is collected. Workday gives only relative dates ("Posted 3 Days Ago"), so `posted_date` is empty for those rows, as is `department` for Greenhouse and Workday.
+Electronic Arts has no job board the tool can read anonymously, so it is not watched. Microsoft's API serves 10 postings per page and throttles with HTTP 429, so its fetch is slow (about 7 minutes) and retries after each 429. No board returns more than 5,000 postings, so no search term is used (`SEARCH_TERMS` in `pipeline/sources.py` is empty and is where one would go). Every posting a board returns is kept, not only ones in role. Workday serves at most 2,000 results per query, so a capped Workday board (NVIDIA, Capital One) is re-queried once per job family, then worker type and location, until every posting is collected. Workday gives only relative dates ("Posted 3 Days Ago"), so `posted_date` is empty for those rows, as is `department` for Greenhouse and Workday.
 
 ## Title rule
 

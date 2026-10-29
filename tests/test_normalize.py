@@ -64,3 +64,26 @@ def test_workday_id_falls_back_to_path():
 def test_duplicate_ids_collapse():
     raw = [{"id": "1", "text": "A"}, {"id": "1", "text": "A again"}]
     assert len(convert(raw, src("lever"))) == 1
+
+
+def test_eightfold():
+    raw = {"positions": [{"id": 1970393557045418, "name": "Data Analyst", "department": "Xbox",
+                          "standardizedLocations": ["Redmond, WA, US", "Remote", "A", "B"],
+                          "postedTs": 1793306018, "positionUrl": "/careers/job/1970393557045418"}]}
+    [r] = convert(raw, src("eightfold", host="apply.example.com"))
+    check(r)
+    assert r["source_id"] == "1970393557045418" and r["department"] == "Xbox"
+    assert r["location"] == "Redmond, WA, US; Remote; A"
+    assert r["url"] == "https://apply.example.com/careers/job/1970393557045418"
+    assert r["posted_date"] == "2026-10-29"
+
+
+def test_jibe():
+    raw = {"jobs": [{"data": {"req_id": "95700", "slug": "95700", "title": "GPU Engineer",
+                              "full_location": "CALGARY, Canada", "categories": [{"name": "Engineering"}],
+                              "posted_date": "2026-10-29T20:24:00+0000"}}]}
+    [r] = convert(raw, src("jibe", host="careers.example.com"))
+    check(r)
+    assert (r["source_id"], r["location"], r["department"]) == ("95700", "CALGARY, Canada", "Engineering")
+    assert r["url"] == "https://careers.example.com/careers-home/jobs/95700"
+    assert r["posted_date"] == "2026-10-29"

@@ -1,6 +1,7 @@
 """Convert each source's raw JSON into the common columns."""
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from .rules import in_role
@@ -22,8 +23,9 @@ def _date_from_iso(value) -> str:
     """'2026-08-19T12:29:00-04:00' -> '2026-08-19' (the date as written, in UTC when it has an offset)."""
     if not value:
         return ""
+    text = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", str(value).replace("Z", "+00:00"))  # "+0000" -> "+00:00"
     try:
-        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(text)
     except ValueError:
         return ""
     if dt.tzinfo is not None:
@@ -117,12 +119,41 @@ def workday(raw: dict, src: dict) -> list[dict]:
     return rows
 
 
+def eightfold(raw: dict, src: dict) -> list[dict]:
+    rows = []
+    for j in raw.get("positions", []):
+        locs = j.get("standardizedLocations") or j.get("locations") or []
+        rows.append(_row(
+            src, j["id"], j.get("name"), "; ".join(locs[:3]), j.get("department"),
+            _date_from_ms(int(j["postedTs"]) * 1000) if j.get("postedTs") else "",
+            f"https://{src['host']}{j.get('positionUrl') or ''}",
+        ))
+    return rows
+
+
+def jibe(raw: dict, src: dict) -> list[dict]:
+    rows = []
+    for item in raw.get("jobs", []):
+        j = item.get("data", item)
+        cats = j.get("categories") or []
+        rows.append(_row(
+            src, j.get("req_id") or j.get("slug"), j.get("title"),
+            j.get("full_location") or j.get("location_name"),
+            (cats[0].get("name") if cats and isinstance(cats[0], dict) else j.get("department")),
+            _date_from_iso(j.get("posted_date")),
+            f"https://{src['host']}/careers-home/jobs/{j.get('slug') or j.get('req_id')}",
+        ))
+    return rows
+
+
 CONVERTERS = {
     "greenhouse": greenhouse,
     "lever": lever,
     "ashby": ashby,
     "smartrecruiters": smartrecruiters,
     "workday": workday,
+    "eightfold": eightfold,
+    "jibe": jibe,
 }
 
 
