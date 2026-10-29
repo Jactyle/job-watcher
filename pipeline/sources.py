@@ -82,21 +82,38 @@ DROP_KEYS = {"descriptionHtml", "descriptionPlain", "description", "descriptionB
              "description_short"}
 
 
-def _request(url, data=None, retries=3, backoff=2):
+def _request(url, data=None, retries=3, backoff=2, throttle_waits=40, throttle_wait=3):
+    """GET (or POST JSON) and return parsed JSON.
+
+    Errors are retried `retries` times. A 429 (too many requests) does not count as a failure: it
+    waits (the server's Retry-After, else `throttle_wait` seconds) and tries again, up to `throttle_waits` times.
+    """
     headers = {"User-Agent": UA, "Accept": "application/json"}
     if data is not None:
         headers["Content-Type"] = "application/json"
         data = json.dumps(data).encode()
-    last = None
-    for attempt in range(retries):
+    attempts = waits = 0
+    while True:
         try:
             req = urllib.request.Request(url, data=data, headers=headers)
             with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
                 return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429 and waits < throttle_waits:
+                waits += 1
+                try:
+                    delay = min(float(exc.headers.get("Retry-After")), 30)
+                except (TypeError, ValueError):
+                    delay = throttle_wait
+                time.sleep(delay)
+                continue
+            error = exc
         except Exception as exc:  # noqa: BLE001 - retried, then re-raised
-            last = exc
-            time.sleep(backoff * (attempt + 1))
-    raise last
+            error = exc
+        attempts += 1
+        if attempts >= retries:
+            raise error
+        time.sleep(backoff * attempts)
 
 
 def _strip(obj):
@@ -173,22 +190,11 @@ def fetch_workday(src):
     return {"total": len(postings), "jobPostings": postings}
 
 
-def _throttled(url, attempts=60, wait=1.5):
-    """GET that waits a short, fixed time after each 429 (Eightfold throttles in short bursts)."""
-    for _ in range(attempts):
-        try:
-            return _request(url, retries=1)
-        except urllib.error.HTTPError as exc:
-            if exc.code != 429:
-                raise
-            time.sleep(wait)
-    raise RuntimeError(f"still throttled after {attempts} attempts: {url}")
-
-
 def _eightfold_pass(src):
     positions, start, total = [], 0, None
     while total is None or start < total:
-        page = _throttled(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}")["data"]
+        page = _request(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}",
+                        retries=1, throttle_waits=80, throttle_wait=1.5)["data"]
         total = page["count"]
         if not page["positions"]:
             break
@@ -226,7 +232,8 @@ def fetch_eightfold_apply(src):
     """Eightfold apply/v2 API (Netflix): 10 positions per page, top-level `positions`."""
     positions, start, total = [], 0, None
     while total is None or start < total:
-        page = _throttled(f"https://{src['host']}/api/apply/v2/jobs?domain={src['domain']}&start={start}&num=10")
+        page = _request(f"https://{src['host']}/api/apply/v2/jobs?domain={src['domain']}&start={start}&num=10",
+                        retries=1, throttle_waits=80, throttle_wait=1.5)
         total = page["count"]
         if not page["positions"]:
             break
