@@ -1,8 +1,8 @@
 {
-  "run_time": "2026-10-29T21:54:49Z",
+  "run_time": "2026-10-29T22:01:10Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 1,
-  "open": 21505,
+  "open": 25120,
   "new_today": 0,
   "removed_today": 0,
   "sources": [
@@ -184,12 +184,12 @@
     {
       "name": "amd",
       "ok": true,
-      "count": 1289
+      "count": 1288
     },
     {
       "name": "servicenow",
       "ok": true,
-      "count": 744
+      "count": 745
     },
     {
       "name": "fidelity",
@@ -203,8 +203,8 @@
     },
     {
       "name": "capitalone",
-      "ok": false,
-      "count": 0
+      "ok": true,
+      "count": 2039
     },
     {
       "name": "sony",
@@ -233,8 +233,8 @@
     },
     {
       "name": "salesforce",
-      "ok": false,
-      "count": 0
+      "ok": true,
+      "count": 1577
     },
     {
       "name": "snap",
@@ -249,7 +249,7 @@
     {
       "name": "nvidia",
       "ok": true,
-      "count": 2722
+      "count": 2721
     }
   ]
 }
