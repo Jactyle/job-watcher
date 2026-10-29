@@ -1,8 +1,8 @@
 {
-  "run_time": "2026-10-29T21:18:52Z",
+  "run_time": "2026-10-29T21:25:15Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 1,
-  "open": 17645,
+  "open": 18722,
   "new_today": 0,
   "removed_today": 0,
   "sources": [
@@ -59,7 +59,7 @@
     {
       "name": "gusto",
       "ok": true,
-      "count": 88
+      "count": 87
     },
     {
       "name": "betterment",
@@ -99,7 +99,7 @@
     {
       "name": "openai",
       "ok": true,
-      "count": 812
+      "count": 813
     },
     {
       "name": "epicgames",
@@ -139,7 +139,7 @@
     {
       "name": "scopely",
       "ok": true,
-      "count": 178
+      "count": 177
     },
     {
       "name": "twitch",
@@ -164,7 +164,7 @@
     {
       "name": "microsoft",
       "ok": true,
-      "count": 2393
+      "count": 2374
     },
     {
       "name": "amd",
@@ -183,8 +183,8 @@
     },
     {
       "name": "mastercard",
-      "ok": false,
-      "count": 0
+      "ok": true,
+      "count": 1097
     },
     {
       "name": "capitalone",
