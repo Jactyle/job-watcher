@@ -89,3 +89,16 @@ def test_apply_day_without_an_index_matches_the_build(tmp_path):
 def _rows(ids):
     from pipeline.normalize import convert
     return convert([job(i) for i in ids], SRC)
+
+
+def test_a_later_listing_with_blank_fields_keeps_the_earlier_values(tmp_path):
+    put(tmp_path, "2026-01-01", SRC, [1])
+    write_raw(tmp_path / "2026-01-02" / "acme.json.gz", [{"id": "1", "text": "", "categories": {}, "hostedUrl": "https://x/1"}])
+    h = history(tmp_path)["1"]
+    assert (h["title"], h["in_role"], h["last_seen"], h["status"]) == ("Financial Analyst", True, "2026-01-02", "open")
+
+def test_a_later_listing_with_a_new_title_replaces_it(tmp_path):
+    put(tmp_path, "2026-01-01", SRC, [1])
+    write_raw(tmp_path / "2026-01-02" / "acme.json.gz", [job(1, "Sales Manager")])
+    h = history(tmp_path)["1"]
+    assert (h["title"], h["in_role"]) == ("Sales Manager", False)

@@ -40,6 +40,14 @@ def _date_from_ms(value) -> str:
     return datetime.fromtimestamp(int(value) / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
 
 
+def _clean_location(value) -> str:
+    """Some boards pad a location with placeholder "BLANK" parts ("BLANK,BLANK,Multiple Locations")."""
+    text = _clean(value)
+    if "BLANK" not in text:
+        return text
+    return ", ".join(p for p in (part.strip() for part in text.split(",")) if p and p != "BLANK")
+
+
 def _row(src: dict, source_id, title, location, department, posted_date, url) -> dict:
     source_id = _clean(source_id)
     title = _clean(title)
@@ -49,7 +57,7 @@ def _row(src: dict, source_id, title, location, department, posted_date, url) ->
         "source_id": source_id,
         "employer": src["employer"],
         "title": title,
-        "location": _clean(location),
+        "location": _clean_location(location),
         "department": _clean(department),
         "posted_date": posted_date,
         "url": _clean(url),
@@ -111,8 +119,12 @@ def _workday_location(text, path: str) -> str:
     if not re.fullmatch(r"\d+ Locations?", _clean(text)):
         return text
     parts = path.split("/")
-    slug = parts[2] if len(parts) > 3 else ""
-    return slug.replace("---", ", ").replace("-", " ") or text
+    slug = parts[2].replace("---", ", ") if len(parts) > 3 else ""
+    if m := re.fullmatch(r"([A-Z]{2})-([A-Z]{2})-(.+)", slug):  # US-CA-Santa-Clara, as NVIDIA writes it
+        return f"{m[1]}, {m[2]}, {m[3].replace('-', ' ')}"
+    if m := re.fullmatch(r"(.+)-([A-Z]{2})", slug):  # McLean-VA
+        return f"{m[1].replace('-', ' ')}, {m[2]}"
+    return slug.replace("-", " ") or text
 
 
 def workday(raw: dict, src: dict) -> list[dict]:

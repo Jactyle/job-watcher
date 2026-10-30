@@ -35,6 +35,11 @@ def apply_day(history: dict, date: str, src: dict, rows: list[dict], first_date:
                             "last_seen": date, "status": "open", "removed_date": ""}
         else:
             keep = {k: old[k] for k in ("first_run", "first_seen")}
+            for k in ("title", "location", "department", "posted_date"):
+                if not row[k] and old[k]:  # a bare listing (Workday sometimes sends an ID and URL only) keeps what was known
+                    keep[k] = old[k]
+                    if k == "title":
+                        keep["in_role"] = old["in_role"]
             old.update(row)
             old.update(keep)
             old["last_seen"] = date

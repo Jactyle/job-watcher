@@ -60,9 +60,17 @@ def test_workday_multi_location_uses_first_location_from_path():
     def loc(text, path):
         raw = {"jobPostings": [{"title": "A", "externalPath": path, "locationsText": text, "bulletFields": ["R1"]}]}
         return convert(raw, src("workday", host="h", site="S"))[0]["location"]
-    assert loc("2 Locations", "/job/US-CA-Santa-Clara/A_R1") == "US CA Santa Clara"
+    assert loc("2 Locations", "/job/US-CA-Santa-Clara/A_R1") == "US, CA, Santa Clara"
+    assert loc("2 Locations", "/job/McLean-VA/A_R1") == "McLean, VA"
+    assert loc("2 Locations", "/job/Intel-Oregon-Hillsboro/A_R1") == "Intel Oregon Hillsboro"
     assert loc("3 Locations", "/job/California---San-Francisco/A_R1") == "California, San Francisco"
     assert loc("Austin, TX", "/job/Other-Place/A_R1") == "Austin, TX"
+
+def test_blank_placeholders_are_dropped_from_a_location():
+    raw = {"jobs": [{"id": 1, "title": "A", "location": {"name": "BLANK,BLANK,Multiple Locations"}, "absolute_url": "u"},
+                    {"id": 2, "title": "B", "location": {"name": "Austin,TX"}, "absolute_url": "u"}]}
+    rows = convert(raw, src("greenhouse"))
+    assert [r["location"] for r in rows] == ["Multiple Locations", "Austin,TX"]
 
 def test_workday_id_falls_back_to_path():
     raw = {"jobPostings": [{"title": "A", "externalPath": "/job/X/A_R22"}]}
