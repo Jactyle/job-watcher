@@ -32,10 +32,10 @@ Live site: https://jactyle.github.io/job-watcher/
 | `data/raw/<date>/<source>.json.gz` | What each source returned that day (descriptions removed to keep files small). A failed source writes no file. |
 | `data/history.csv` | One row per posting ever seen. |
 | `data/status.json` | Describes the latest run, including the result of every source. |
-| `index.html` | Today page: last run, source status, the four counts, new and removed postings. |
-| `browse.html` | Browse page: open postings with role switch, filters, title search, sort, apply links, starred shortlist (localStorage). |
+| `index.html` | Today page: last run, source status, the four counts, new and removed postings as tiles. |
+| `browse.html` | Browse page, laid out like a job board: title/company and location search, role switch, employer and days-open filters, sort, a results list with a detail pane, an apply link on every posting, and a saved shortlist (localStorage). Arrow keys move through the results. |
 | `market.html` | Market page: six sections computed in the browser from the history file. |
-| `app.js`, `app.css` | Shared navigation, data loading, fonts and colors. |
+| `app.js`, `app.css` | Shared navigation, data loading, fonts and colors. The look is a dark console home screen: an ambient background whose hue follows the selected employer, glass tiles with white focus rings, light type and pill buttons. |
 | `sw.js`, `manifest.webmanifest`, `icon-*.png` | Make the site installable and usable offline (network first, cached data when offline). |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are. |
 

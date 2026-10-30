@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f3d2e"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Today</title></head>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04060c"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Today</title></head>
 <body><main id="main"><h1>Today</h1><p class="sub" id="sub">Loading…</p></main>
 <script src="app.js"></script>
 <script>
@@ -6,15 +6,15 @@ loadData().then(({ rows, status }) => {
   const day = lastRunDate(status);
   const fresh = rows.filter(r => r.first_seen === day && !r.first_run);
   const gone = rows.filter(r => r.removed_date === day);
-  const stat = (n, l) => `<div class="card stat"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`;
-  const item = r => `<li>${r.in_role ? '<span class="tag">in role</span>' : ""}<a href="${esc(safeUrl(r.url))}" rel="noopener">${esc(r.title)}</a><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></li>`;
-  const list = (rs) => rs.length ? `<ul class="list">${rs.sort((a, b) => b.in_role - a.in_role || a.employer.localeCompare(b.employer)).map(item).join("")}</ul>` : '<p class="meta">None in the latest run.</p>';
+  const stat = (n, l, cls = "") => `<div class="tile stat ${cls}" tabindex="0"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`;
+  const item = r => `<a class="tile post" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">${mono(r.employer)}<div class="body"><div class="ttl">${r.in_role ? '<span class="tag">in role</span>' : ""}${esc(r.title)}</div><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></div></a>`;
+  const list = (rs) => rs.length ? `<div class="tiles">${rs.sort((a, b) => b.in_role - a.in_role || a.employer.localeCompare(b.employer)).map(item).join("")}</div>` : '<p class="meta">None in the latest run.</p>';
   document.getElementById("main").innerHTML = `
     <h1>Today</h1>
     <p class="sub">Last run: ${esc(status.run_time)} · watching since ${esc(status.first_run_date)}</p>
-    <div class="grid">${stat(status.days_with_success, "days with a successful run")}${stat(status.open, "open postings")}${stat(status.new_today, "new today")}${stat(status.removed_today, "removed today")}</div>
+    <div class="grid">${stat(status.days_with_success, "days with a successful run")}${stat(status.open, "open postings")}${stat(status.new_today, "new today", "hot")}${stat(status.removed_today, "removed today", "cold")}</div>
     <div class="section"><h2>Sources</h2><div class="pills">${status.sources.map(s => `<span class="pill ${s.ok ? "ok" : "bad"}">${esc(s.name)} · ${s.ok ? s.count.toLocaleString() : "failed"}</span>`).join("")}</div></div>
-    <div class="section"><h2>New postings (${fresh.length.toLocaleString()})</h2>${list(fresh)}</div>
-    <div class="section"><h2>Removed postings (${gone.length.toLocaleString()})</h2>${list(gone)}</div>`;
+    <div class="section bare"><h2>New postings<span class="count">${fresh.length.toLocaleString()}</span></h2>${list(fresh)}</div>
+    <div class="section bare"><h2>Removed postings<span class="count">${gone.length.toLocaleString()}</span></h2>${list(gone)}</div>`;
 }).catch(showError);
 </script></body></html>

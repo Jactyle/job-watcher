@@ -1,8 +1,8 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f3d2e"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Market</title></head>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04060c"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Market</title></head>
 <body><main id="main"><h1>Market</h1><p class="sub">Loading…</p></main>
 <script src="app.js"></script>
 <script>
-const C = { all: "#1f8a5b", role: "#c9822b", bar: "#1f8a5b", bar2: "#c9822b" };
+const C = { all: "#5aa9ff", role: "#ffd166", bar: "#5aa9ff", bar2: "#b79cff" };
 const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : null; };
 const dayStr = n => new Date(n * 86400000).toISOString().slice(0, 10);
 
