@@ -1,10 +1,10 @@
 {
-  "run_time": "2026-10-30T00:21:19Z",
+  "run_time": "2026-10-30T00:28:57Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 2,
-  "open": 25027,
-  "new_today": 65,
-  "removed_today": 158,
+  "open": 25119,
+  "new_today": 66,
+  "removed_today": 67,
   "sources": [
     {
       "name": "robinhood",
@@ -69,7 +69,7 @@
     {
       "name": "databricks",
       "ok": true,
-      "count": 905
+      "count": 904
     },
     {
       "name": "airbnb",
@@ -164,7 +164,7 @@
     {
       "name": "microsoft",
       "ok": true,
-      "count": 2328
+      "count": 2422
     },
     {
       "name": "netflix",
@@ -234,7 +234,7 @@
     {
       "name": "salesforce",
       "ok": true,
-      "count": 1586
+      "count": 1584
     },
     {
       "name": "snap",
@@ -249,7 +249,7 @@
     {
       "name": "nvidia",
       "ok": true,
-      "count": 2726
+      "count": 2727
     }
   ]
 }
