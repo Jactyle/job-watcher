@@ -1,6 +1,6 @@
 // Network first (fresh data when online), cache fallback (last data when offline).
-const CACHE = "job-watcher-v3";
-const SHELL = ["./", "index.html", "browse.html", "market.html", "app.css", "app.js", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
+const CACHE = "job-watcher-v4";
+const SHELL = ["./", "index.html", "browse.html", "market.html", "app.css", "app.js", "country.js", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 const DATA = ["data/history.csv", "data/status.json"];  // cached at install so the first visit works offline
 
 self.addEventListener("install", (e) => {

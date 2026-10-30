@@ -1,6 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04060c"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Market</title></head>
-<body><main id="main"><h1>Market</h1><p class="sub">Loading…</p></main>
+<body><main id="main"><h1>Market</h1><p class="sub">Loading…</p><div class="skel panel"></div><div class="skel panel"></div></main>
 <script src="app.js"></script>
+<script src="country.js"></script>
 <script>
 const C = { all: "#5aa9ff", role: "#ffd166", bar: "#5aa9ff", bar2: "#b79cff" };
 const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : null; };
@@ -15,7 +16,7 @@ function barChart(labels, series, fmt = v => v) {
   let out = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">`;
   for (let i = 0; i <= 4; i++) {
     const y = T + (H - T - B) * (1 - i / 4);
-    out += `<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(Math.round(max * i / 4 * 10) / 10)}</text>`;
+    out += `<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(max >= 10 ? Math.round(max * i / 4) : Math.round(max * i / 4 * 10) / 10)}</text>`;
   }
   const every = Math.ceil(n / 12);
   labels.forEach((lb, i) => {
@@ -67,13 +68,13 @@ loadData().then(({ rows, status }) => {
   const buckets = [["0-1", 0, 1], ["2-3", 2, 3], ["4-7", 4, 7], ["8-14", 8, 14], ["15-30", 15, 30], ["31+", 31, 1e9]];
   const s4 = section(med === null ? "No removed postings with a known start date yet" : `Postings stay open a median of ${med} days`,
     `Removed postings that were not open at the first run, measured as removed date minus first-seen date (${plural(spans.length, "posting")}).`,
-    barChart(spans.length ? buckets.map(b => b[0]) : [], [{ name: "Postings", color: C.bar, values: buckets.map(([, lo, hi]) => spans.filter(v => v >= lo && v <= hi).length) }]));
+    !spans.length ? '<p class="meta">Nothing to chart yet. This fills in as postings first seen after the first run get removed.</p>' : barChart(buckets.map(b => b[0]), [{ name: "Postings", color: C.bar, values: buckets.map(([, lo, hi]) => spans.filter(v => v >= lo && v <= hi).length) }]));
   const eligible = fresh.filter(r => lastN - dayNum(r.first_seen) >= 7);
   const fast = eligible.filter(r => r.removed_date && dayNum(r.removed_date) - dayNum(r.first_seen) <= 7);
   const share = eligible.length ? fast.length / eligible.length : null;
   const s5 = section(share === null ? "Not enough history for the seven-day share yet" : `${(share * 100).toFixed(1)}% of postings are removed within seven days`,
     `Among ${plural(eligible.length, "posting")} that were not open at the first run and were first seen at least seven days before the last run, ${fast.length.toLocaleString()} were removed within seven days.`,
-    share === null ? '<p class="meta">Not enough history yet.</p>' : barChart(["Removed within 7 days", "Still open or later"], [{ name: "Postings", color: C.bar, values: [fast.length, eligible.length - fast.length] }]));
+    share === null ? `<p class="meta">Nothing to chart yet. This needs a posting first seen after the first run that is at least seven days old, so it fills in from ${dayStr(dayNum(first) + 8)} on.</p>` : barChart(["Removed within 7 days", "Still open or later"], [{ name: "Postings", color: C.bar, values: [fast.length, eligible.length - fast.length] }]));
 
   // 6 top locations among open
   const locs = [...tally(open.filter(r => r.location), "location")].sort((a, b) => b[1] - a[1]).slice(0, 12);
@@ -81,7 +82,17 @@ loadData().then(({ rows, status }) => {
     "The twelve most common locations among open postings, as the employers write them.",
     barChart(locs.map(l => l[0]), [{ name: "Open", color: C.bar, values: locs.map(l => l[1]) }]));
 
+  // 7 (extra) open postings outside the US. The country is read from the location text by country.js.
+  const placed = open.map(r => ({ country: countryOf(r.location), in_role: r.in_role }));
+  const abroad = placed.filter(x => x.country && x.country !== "United States");
+  const noCountry = placed.filter(x => !x.country).length, inUS = placed.length - noCountry - abroad.length;
+  const abroadAll = tally(abroad, "country"), abroadRole = tally(abroad.filter(x => x.in_role), "country");
+  const topAbroad = [...abroadAll].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const s7 = section(topAbroad.length ? `${plural(abroad.length, "open posting")} are outside the US, led by ${esc(topAbroad[0][0])}` : "No open postings outside the US yet",
+    `${(abroad.length / Math.max(1, abroad.length + inUS) * 100).toFixed(1)}% of the open postings that name a country are outside the United States; ${abroad.filter(x => x.in_role).length.toLocaleString()} of those are in role. The chart shows the twelve countries with the most. The country is read from the location text, so ${plural(noCountry, "posting")} that name none (such as Hybrid or Remote) are left out, a posting that also lists a US location counts as US, and one that lists several other countries is counted under the last one listed.`,
+    barChart(topAbroad.map(e => e[0]), [{ name: "All open", color: C.bar, values: topAbroad.map(e => e[1]) }, { name: "In role", color: C.role, values: topAbroad.map(e => abroadRole.get(e[0]) || 0) }]));
+
   document.getElementById("main").innerHTML = `<h1>Market</h1>
-    <p class="sub">Computed in your browser from data/history.csv · ${watched} days of history, last run ${esc(last)}</p>${s1}${s2}${s3}${s4}${s5}${s6}`;
+    <p class="sub">Computed in your browser from data/history.csv · ${watched} days of history, last run ${esc(last)}</p>${s1}${s2}${s3}${s4}${s5}${s6}${s7}`;
 }).catch(showError);
 </script></body></html>
