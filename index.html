@@ -9,7 +9,7 @@ loadData().then(({ rows, status }) => {
   let roleOnly = false;                      // both lists show every posting by default
   const expanded = { new: false, gone: false };
   const stat = (n, l, cls = "") => `<div class="tile stat ${cls}" tabindex="0"><div class="n">${n.toLocaleString()}</div><div class="l">${l}</div></div>`;
-  const item = r => `<a class="tile post" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">${mono(r.employer)}<div class="body"><div class="ttl">${r.in_role ? '<span class="tag">in role</span>' : ""}${esc(r.title)}</div><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></div></a>`;
+  const item = r => `<a class="tile post" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">${mono(r.employer, false, r.source)}<div class="body"><div class="ttl">${r.in_role ? '<span class="tag">in role</span>' : ""}${esc(r.title)}</div><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></div></a>`;
   // In-role postings come first. The whole list is in the page; a long one shows its first rows until "Show all".
   const list = (rs, key, what) => {
     rs = (roleOnly ? rs.filter(r => r.in_role) : rs).slice().sort((a, b) => b.in_role - a.in_role || a.employer.localeCompare(b.employer));

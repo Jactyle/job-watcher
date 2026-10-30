@@ -92,7 +92,7 @@ function render() {
 function card(r) {
   const on = saved.has(r.posting_id), gone = isGone(r);
   return `<div class="job${r.posting_id === selId ? " sel" : ""}" tabindex="0" data-id="${esc(r.posting_id)}">
-    ${mono(r.employer)}
+    ${mono(r.employer, false, r.source)}
     <div class="body"><div class="ttl">${esc(r.title)}</div>
       <div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div>
       <div class="meta">${gone ? `<span class="tag warn">removed ${esc(r.removed_date)}</span>` : ""}${r.in_role ? '<span class="tag">in role</span>' : ""}${isNew(r) ? '<span class="tag alt">new today</span>' : ""}first seen ${esc(r.first_seen)}${r.first_run ? " (already open at first run)" : ""}</div></div>
@@ -105,7 +105,7 @@ function showDetail() {
   document.body.style.setProperty("--hue", hueOf(r.employer));
   const n = age(r), on = saved.has(r.posting_id), gone = isGone(r);
   el.innerHTML = `<button class="btn back" id="back" type="button">← Back to results</button>
-    <div class="dhead">${mono(r.employer, true)}<div><h2 class="dtitle">${esc(r.title)}</h2><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></div></div>
+    <div class="dhead">${mono(r.employer, true, r.source)}<div><h2 class="dtitle">${esc(r.title)}</h2><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></div></div>
     <div class="badges">${gone ? `<span class="tag warn">removed ${esc(r.removed_date)}</span>` : ""}${r.in_role ? '<span class="tag">in role</span>' : ""}${isNew(r) ? '<span class="tag alt">new today</span>' : ""}${r.first_run ? '<span class="tag dim">open before we started watching</span>' : ""}</div>
     <div class="actions"><a class="btn primary${gone ? " ghost" : ""}" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">${gone ? "View the old posting" : `Apply on ${esc(r.employer)}`} ↗</a>
       <button class="btn" id="saveBtn" type="button">${on ? "★ Saved" : "☆ Save"}</button></div>

@@ -48,7 +48,12 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<":
 const safeUrl = (u) => (/^https?:\/\//i.test(u) ? u : "#");
 // A stable color per employer: a hue from its name, and a letter tile.
 const hueOf = (s) => { let h = 0; for (const c of String(s ?? "")) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
-const mono = (employer, big = false) => `<span class="mono${big ? " big" : ""}" style="--h:${hueOf(employer)}">${esc(String(employer || "?").trim().charAt(0).toUpperCase())}</span>`;
+const mono = (employer, big = false, source = "") => {
+  const letter = esc(String(employer || "?").trim().charAt(0).toUpperCase());
+  // The employer's logo (logos/<source>.png) sits on top of the letter tile; if it will not load, the letter shows.
+  const img = source ? `<img src="logos/${esc(source)}.png" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove('has-logo');this.remove()">` : "";
+  return `<span class="mono${big ? " big" : ""}${img ? " has-logo" : ""}" style="--h:${hueOf(employer)}"><b>${letter}</b>${img}</span>`;
+};
 const plural = (n, w) => `${n.toLocaleString()} ${w}${n === 1 ? "" : "s"}`;
 
 function showError(e) {
