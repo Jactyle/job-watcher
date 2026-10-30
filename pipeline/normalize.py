@@ -106,6 +106,15 @@ def smartrecruiters(raw: dict, src: dict) -> list[dict]:
     return rows
 
 
+def _workday_location(text, path: str) -> str:
+    """Workday lists "2 Locations" for multi-location postings; the URL slug names the first one."""
+    if not re.fullmatch(r"\d+ Locations?", _clean(text)):
+        return text
+    parts = path.split("/")
+    slug = parts[2] if len(parts) > 3 else ""
+    return slug.replace("---", ", ").replace("-", " ") or text
+
+
 def workday(raw: dict, src: dict) -> list[dict]:
     rows = []
     for j in raw.get("jobPostings", []):
@@ -114,7 +123,7 @@ def workday(raw: dict, src: dict) -> list[dict]:
         source_id = bullets[0] if bullets else path.rsplit("_", 1)[-1]
         # postedOn is relative text ("Posted 3 Days Ago"), so posted_date stays empty.
         rows.append(_row(
-            src, source_id, j.get("title"), j.get("locationsText"), "", "",
+            src, source_id, j.get("title"), _workday_location(j.get("locationsText"), path), "", "",
             f"https://{src['host']}/{src['site']}{path}",
         ))
     return rows

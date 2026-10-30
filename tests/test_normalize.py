@@ -56,6 +56,14 @@ def test_workday():
     assert r["source_id"] == "R1" and r["url"] == "https://h.example.com/Site/job/X/Analyst_R1"
     assert r["posted_date"] == "" and r["department"] == ""
 
+def test_workday_multi_location_uses_first_location_from_path():
+    def loc(text, path):
+        raw = {"jobPostings": [{"title": "A", "externalPath": path, "locationsText": text, "bulletFields": ["R1"]}]}
+        return convert(raw, src("workday", host="h", site="S"))[0]["location"]
+    assert loc("2 Locations", "/job/US-CA-Santa-Clara/A_R1") == "US CA Santa Clara"
+    assert loc("3 Locations", "/job/California---San-Francisco/A_R1") == "California, San Francisco"
+    assert loc("Austin, TX", "/job/Other-Place/A_R1") == "Austin, TX"
+
 def test_workday_id_falls_back_to_path():
     raw = {"jobPostings": [{"title": "A", "externalPath": "/job/X/A_R22"}]}
     [r] = convert(raw, src("workday", host="h", site="S"))
