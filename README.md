@@ -17,6 +17,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `pipeline/rules.py` | The title rule (`in_role`). |
 | `pipeline/build.py` | Builds `data/history.csv` from the raw files alone and computes `data/status.json`. |
 | `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. |
+| `pipeline/logos.py` | Downloads each employer's icon into `logos/` (`python -m pipeline.logos`). Run by hand when an employer is added; the daily run does not use it. |
 | `pipeline/run.py` | One daily run: fetch all sources in parallel, save raw, build, write status, open the issue. A failed source or issue step never stops the commit. |
 | `pipeline/__init__.py` | Marks `pipeline` as a Python package. |
 | `tests/test_normalize.py` | Conversion of every source type to the common columns. |
@@ -25,6 +26,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `tests/test_run.py` | A failed source is recorded and writes no raw file. |
 | `tests/test_sources.py`, `tests/test_workday_split.py`, `tests/test_eightfold.py` | Fetch helpers: raw file writing, Workday 2,000-result splitting, Microsoft second pass. |
 | `tests/test_issue.py` | The daily issue text. |
+| `tests/test_logos.py` | Every watched employer has a logo domain and a PNG file in `logos/`. |
 | `tests/test_country_js.py` | `country.js` run with node: country codes, US states, mixed postings, unknown locations (skipped where node is not installed). |
 | `requirements.txt` | Python dependency (pytest); the pipeline itself uses only the standard library. |
 | `.gitignore` | Keeps caches out of the repository. |
@@ -37,6 +39,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `browse.html` | Browse page, laid out like a job board: title/company and location search, role switch, employer and days-open filters, sort, a results list with a detail pane, an apply link on every posting, a Remote quick filter, and a saved shortlist (localStorage) that keeps postings after they are removed. The search and filters are kept in the URL hash, so a search can be bookmarked or shared. Arrow keys move through the results; filters fold into a button on phones. |
 | `market.html` | Market page: the six required sections plus an extra chart of open postings outside the US, all computed in the browser from the history file. |
 | `country.js` | Reads a posting's country from its location text (the history file has no country column) for the extra Market chart. A posting that also lists a US location counts as US; one with no country, like Hybrid, is left out. |
+| `logos/<source>.png` | The employer icons shown next to postings (the employers' own, used only to identify them). A missing one falls back to a letter tile. The Cisco and Ubisoft files were supplied by hand (their sites publish only tiny icons) and cleaned up to a transparent 256 px PNG; the download tool only replaces a logo with a larger one, so it will not overwrite them. |
 | `app.js`, `app.css` | Shared navigation, data loading, fonts and colors. The look is a dark console home screen: an ambient background whose hue follows the selected employer, glass tiles with white focus rings, light type and pill buttons. |
 | `sw.js`, `manifest.webmanifest`, `icon-*.png` | Make the site installable and usable offline (network first, cached data when offline). |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are. |
