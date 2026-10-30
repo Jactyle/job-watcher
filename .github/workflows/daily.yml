@@ -6,7 +6,6 @@ on:
 permissions:
   contents: write
   issues: write
-  pages: write
 concurrency: daily
 jobs:
   run:
@@ -28,7 +27,3 @@ jobs:
           git commit -m "data: run $(date -u +%F)" || echo "nothing to commit"
           git pull --rebase
           git push
-      - name: Rebuild Pages
-        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
-        env:
-          GH_TOKEN: ${{ github.token }}
