@@ -41,7 +41,9 @@ Live site: https://jactyle.github.io/job-watcher/
 | `country.js` | Reads a posting's country from its location text (the history file has no country column) for the extra Market chart. A posting that also lists a US location counts as US; one with no country, like Hybrid, is left out. |
 | `logos/<source>.png` | The employer icons shown next to postings (the employers' own, used only to identify them). A missing one falls back to a letter tile. The Cisco and Ubisoft files were supplied by hand (their sites publish only tiny icons) and cleaned up to a transparent 256 px PNG; the download tool only replaces a logo with a larger one, so it will not overwrite them. |
 | `app.js`, `app.css` | Shared navigation, data loading, fonts and colors. The look is a dark console home screen: an ambient background whose hue follows the selected employer, glass tiles with white focus rings, light type and pill buttons. |
-| `sw.js`, `manifest.webmanifest`, `icon-*.png` | Make the site installable and usable offline (network first, cached data when offline). |
+| `sw.js` | Service worker: network first, cached copy when offline, so the site opens offline and shows the last data it loaded. |
+| `manifest.webmanifest` | Web app manifest: name, start page and icons, so the browser can install the site as an app. |
+| `icon-192.png`, `icon-512.png` | The app icon at the two sizes the manifest names. |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are. |
 
 ## Sources
