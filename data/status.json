@@ -2,9 +2,9 @@
   "run_time": "2026-10-30T15:59:12Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 2,
-  "open": 24946,
-  "new_today": 425,
-  "removed_today": 599,
+  "open": 24950,
+  "new_today": 436,
+  "removed_today": 606,
   "sources": [
     {
       "name": "robinhood",
@@ -163,8 +163,8 @@
     },
     {
       "name": "microsoft",
-      "ok": false,
-      "count": 0
+      "ok": true,
+      "count": 2422
     },
     {
       "name": "netflix",
