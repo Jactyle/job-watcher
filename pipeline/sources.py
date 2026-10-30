@@ -190,11 +190,20 @@ def fetch_workday(src):
     return {"total": len(postings), "jobPostings": postings}
 
 
-def _eightfold_pass(src):
+def _eightfold_pass(src, blocks=12, block_wait=15):
+    """One crawl of the list. The firewall sometimes answers 403 for a while in the middle of a crawl, so a
+    403 is waited out, but only `blocks` times in all: a board that stays blocked fails instead of stalling."""
     positions, start, total = [], 0, None
     while total is None or start < total:
-        page = _request(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}",
-                        retries=1, throttle_waits=80, throttle_wait=1.5)["data"]
+        try:
+            page = _request(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}",
+                            retries=1, throttle_waits=80, throttle_wait=1.5)["data"]
+        except urllib.error.HTTPError as exc:
+            if exc.code != 403 or blocks <= 0:
+                raise
+            blocks -= 1
+            time.sleep(block_wait)
+            continue
         total = page["count"]
         if not page["positions"]:
             break
