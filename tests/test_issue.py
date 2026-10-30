@@ -13,6 +13,10 @@ def test_body_lists_new_and_removed_with_links():
     assert "Removed postings (1)" in body and "https://x/b" in body
     assert "https://x/c" not in body
 
+def test_brackets_in_a_title_do_not_break_the_link():
+    body = build_body("2026-01-02", [row("a", title="Analyst [Remote] II")])
+    assert "[Analyst \\[Remote\\] II](https://x/a)" in body
+
 def test_body_on_quiet_day():
     assert "None." in build_body("2026-01-02", [])
 

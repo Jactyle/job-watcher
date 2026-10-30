@@ -8,9 +8,14 @@ LABEL = "daily-digest"
 MAX_BODY = 60000
 
 
+def _link_text(title: str) -> str:
+    """Brackets in a title would end the Markdown link early."""
+    return title.replace("[", "\\[").replace("]", "\\]")
+
+
 def _lines(rows: list[dict]) -> list[str]:
     rows = sorted(rows, key=lambda r: (not r["in_role"], r["employer"], r["title"]))
-    return [f"- {'**[in role]** ' if r['in_role'] else ''}{r['employer']}: [{r['title']}]({r['url']})"
+    return [f"- {'**[in role]** ' if r['in_role'] else ''}{r['employer']}: [{_link_text(r['title'])}]({r['url']})"
             f" ({r['location'] or 'no location'})" for r in rows]
 
 
