@@ -32,9 +32,10 @@ body::after {
 @keyframes drift { from { transform: translateX(-6vw) rotate(-6deg); } to { transform: translateX(6vw) rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) { body::after { animation: none; } * { transition: none !important; } }
 
+[hidden] { display: none !important; }
 a { color: var(--accent); }
 header.nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  background: linear-gradient(180deg, rgba(4, 6, 12, .72), rgba(4, 6, 12, .3)); }
+  background: linear-gradient(180deg, rgba(4, 6, 12, .97), rgba(4, 6, 12, .92)); box-shadow: 0 1px 0 rgba(255, 255, 255, .06); }
 header.nav .in { max-width: 1320px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; gap: 30px; }
 header.nav .brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 600; letter-spacing: .02em; }
 header.nav .logo { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; position: relative; box-shadow: 0 0 14px rgba(255, 255, 255, .45); }
@@ -65,7 +66,8 @@ h2 { font-weight: 400; font-size: 1.45rem; letter-spacing: -.005em; }
 .stat .l { color: var(--muted); margin-top: 8px; font-size: .95rem; }
 .stat.hot .n { color: var(--good); } .stat.cold .n { color: var(--warn); }
 .tiles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
-.post { display: flex; gap: 14px; align-items: flex-start; }
+.post { display: flex; gap: 14px; align-items: flex-start; backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255, 255, 255, .08); }  /* a blur layer per tile is too heavy for 1,000 tiles */
+.post:hover, .post:focus-visible { background: var(--glass2); }
 .post .body { min-width: 0; flex: 1; }
 .post .ttl { font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mono { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 700; font-size: 1.1rem; color: #fff;
@@ -146,11 +148,38 @@ select option { background: #0b1226; color: #fff; }
 .empty { text-align: center; color: var(--muted); padding: 60px 20px; border: 1px dashed var(--line); border-radius: 22px; }
 .more { text-align: center; margin: 16px 0 0; }
 
+/* loading skeletons */
+.skel { min-height: 96px; border-radius: 22px; border: 1px solid var(--line); pointer-events: none;
+  background: linear-gradient(100deg, var(--glass) 30%, var(--glass2) 50%, var(--glass) 70%) 0 0 / 220% 100%; animation: shimmer 1.4s linear infinite; }
+.skel.tall { min-height: 130px; } .skel.panel { min-height: 280px; border-radius: 26px; margin-bottom: 30px; }
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* collapsed lists on Today: every posting is in the page, the first rows show until "Show all" */
+.tiles.collapsed { max-height: 340px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
+.section.bare .more { margin: 14px 0 0; }
+.listbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0 0 22px; }
+
+/* Browse extras */
+.tag.warn { background: var(--warn); color: #2a0008; }
+.seg.off { opacity: .4; pointer-events: none; }
+.filters .extra { display: contents; }
+.filtertoggle { display: none; }
+.filtertoggle .n { background: #fff; color: #04060c; border-radius: 999px; font-size: .78rem; padding: 0 7px; min-width: 20px; text-align: center; }
+.filtertoggle .n:empty { display: none; }
+.job .gone { font-size: .85rem; color: var(--warn); }
+.btn.ghost { background: var(--glass); color: #fff; border-color: var(--line); }
+.btn.ghost.primary:hover { background: var(--glass2); }
+.detail .note { color: var(--muted); font-size: .92rem; margin: -10px 0 24px; }
+
 @media (max-width: 900px) {
   main { padding: 18px 16px 80px; }
   header.nav .in { padding: 12px 16px; gap: 18px; }
   header.nav .brand span, header.nav .navchip { display: none; }
-  .filters select { flex: 1 1 150px; }
+  .filters .extra { display: none; width: 100%; flex-wrap: wrap; gap: 10px; }
+  .filters.open .extra { display: flex; }
+  .filters .extra select { flex: 1 1 150px; }
+  .filtertoggle { display: inline-flex; }
+  .tiles.collapsed { max-height: 300px; }
   .split { grid-template-columns: 1fr; }
   .detail { display: none; }
   body.show-detail .detail { display: block; position: fixed; inset: 0; z-index: 30; max-height: none; border-radius: 0; padding: 20px 18px 40px;

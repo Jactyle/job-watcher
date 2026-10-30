@@ -5,7 +5,7 @@ function renderNav() {
   const here = location.pathname.split("/").pop() || "index.html";
   const links = PAGES.map(([h, t]) => `<a class="link${h === here ? " on" : ""}" href="${h}">${t}</a>`).join("");
   document.body.insertAdjacentHTML("afterbegin",
-    `<header class="nav"><div class="in"><a class="brand" href="index.html"><i class="logo"></i><span>Job Watcher</span></a>${links}<span class="navchip" id="navchip"></span></div></header>` +
+    `<header class="nav"><div class="in"><a class="brand" href="index.html" aria-label="Job Watcher home"><i class="logo"></i><span>Job Watcher</span></a>${links}<span class="navchip" id="navchip"></span></div></header>` +
     `<div class="offline" id="offline">Offline: showing the last data this device loaded.</div>`);
 }
 

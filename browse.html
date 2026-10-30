@@ -5,16 +5,20 @@
   <label class="field"><span class="ico">⌖</span><input id="location" type="search" list="locations" placeholder="Location" aria-label="Location"><datalist id="locations"></datalist></label>
   <button class="btn primary" type="submit">Find jobs</button>
 </form>
-<div class="filters">
-  <div class="seg"><button id="roleBtn" class="btn on" type="button">In role</button><button id="allBtn" class="btn" type="button">All postings</button></div>
-  <select id="employer" aria-label="Employer"><option value="">Employer</option></select>
-  <select id="days" aria-label="Days open"><option value="">Days open</option><option value="1">1 day or less</option><option value="7">7 days or less</option><option value="30">30 days or less</option><option value="31">More than 30 days</option></select>
-  <select id="sort" aria-label="Sort by first seen"><option value="new">Newest first seen</option><option value="old">Oldest first seen</option></select>
+<div class="filters" id="filters">
+  <div class="seg" id="roleSeg"><button id="roleBtn" class="btn on" type="button">In role</button><button id="allBtn" class="btn" type="button">All postings</button></div>
   <button id="starBtn" class="btn" type="button">☆ Saved <span id="savedN">0</span></button>
+  <button id="filterToggle" class="btn filtertoggle" type="button" aria-expanded="false">Filters <span class="n" id="filterN"></span></button>
+  <div class="extra">
+    <select id="employer" aria-label="Employer"><option value="">Employer</option></select>
+    <select id="days" aria-label="Days open"><option value="">Days open</option><option value="1">1 day or less</option><option value="7">7 days or less</option><option value="30">30 days or less</option><option value="31">More than 30 days</option></select>
+    <select id="sort" aria-label="Sort by first seen"><option value="new">Newest first seen</option><option value="old">Oldest first seen</option></select>
+    <button id="remoteBtn" class="btn" type="button">Remote</button>
+  </div>
 </div>
 <div class="resultsbar" id="count">Loading…</div>
 <div class="split">
-  <div><div class="results" id="list"></div><p class="more"><button class="btn" id="more" type="button" hidden>Show more</button></p></div>
+  <div><div class="results" id="list"><div class="job skel"></div><div class="job skel"></div><div class="job skel"></div><div class="job skel"></div></div><p class="more"><button class="btn" id="more" type="button" hidden>Show more</button></p></div>
   <aside class="detail" id="detail" aria-live="polite"></aside>
 </div></main>
 <script src="app.js"></script>
@@ -24,58 +28,92 @@ let saved = new Set();
 try { saved = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify([...saved])); } catch (e) {} };
 const $ = id => document.getElementById(id);
-let open = [], today = "", inRoleOnly = true, starOnly = false, limit = 100, selId = null, view = [];
+const FIELDS = ["q", "location", "employer", "days", "sort"];
+let rows = [], open = [], today = "", inRoleOnly = true, starOnly = false, remoteOnly = false, limit = 100, selId = null, picked = false, view = [];
+
+// The search and filters live in the URL hash, so a search can be bookmarked, shared and survives a reload.
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  FIELDS.forEach(id => { $(id).value = p.get(id) || (id === "sort" ? "new" : ""); });
+  inRoleOnly = p.get("role") !== "all"; starOnly = p.get("saved") === "1"; remoteOnly = p.get("remote") === "1";
+  selId = p.get("job"); picked = !!selId;
+}
+function writeHash() {
+  const p = new URLSearchParams();
+  FIELDS.forEach(id => { const v = $(id).value.trim(); if (v && !(id === "sort" && v === "new")) p.set(id, v); });
+  if (!inRoleOnly) p.set("role", "all");
+  if (starOnly) p.set("saved", "1");
+  if (remoteOnly) p.set("remote", "1");
+  if (picked && selId) p.set("job", selId);
+  const h = p.toString();
+  try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (e) {}
+}
+function syncControls() {
+  $("roleBtn").classList.toggle("on", inRoleOnly); $("allBtn").classList.toggle("on", !inRoleOnly);
+  $("starBtn").classList.toggle("on", starOnly); $("remoteBtn").classList.toggle("on", remoteOnly);
+  $("roleSeg").classList.toggle("off", starOnly);   // the saved list shows every saved posting
+  const n = ($("employer").value ? 1 : 0) + ($("days").value ? 1 : 0) + ($("sort").value !== "new" ? 1 : 0) + (remoteOnly ? 1 : 0);
+  $("filterN").textContent = n || "";
+}
 
 function fillEmployers(values) {
   [...new Set(values)].filter(Boolean).sort((a, b) => a.localeCompare(b))
     .forEach(v => $("employer").insertAdjacentHTML("beforeend", `<option>${esc(v)}</option>`));
 }
-function fillLocations(rows) {  // the most common places, as suggestions; any text still filters
-  const n = new Map(); rows.forEach(r => r.location && n.set(r.location, (n.get(r.location) || 0) + 1));
+function fillLocations(rs) {  // the most common places, as suggestions; any text still filters
+  const n = new Map(); rs.forEach(r => r.location && n.set(r.location, (n.get(r.location) || 0) + 1));
   $("locations").innerHTML = [...n].sort((a, b) => b[1] - a[1]).slice(0, 300).map(([l]) => `<option value="${esc(l)}">`).join("");
 }
-const daysOpen = r => dayNum(today) - dayNum(r.first_seen);
+const isGone = r => r.status !== "open";
+const age = r => (isGone(r) && r.removed_date ? dayNum(r.removed_date) : dayNum(today)) - dayNum(r.first_seen);
+const isNew = r => !r.first_run && !isGone(r) && r.first_seen === today;
+const REMOTE = /remote/i;
 
 function render() {
   const q = $("q").value.trim().toLowerCase(), emp = $("employer").value, loc = $("location").value.trim().toLowerCase(), d = $("days").value;
-  let rs = open.filter(r => (!inRoleOnly || r.in_role) && (!emp || r.employer === emp) && (!loc || r.location.toLowerCase().includes(loc)) &&
-    (!q || r.title.toLowerCase().includes(q) || r.employer.toLowerCase().includes(q)) && (!starOnly || saved.has(r.posting_id)));
-  if (d) rs = rs.filter(r => { const n = daysOpen(r); return d === "31" ? n > 30 : n <= +d; });
+  // The saved list also keeps postings that have since been removed, marked as removed.
+  const pool = starOnly ? rows.filter(r => !isGone(r) || saved.has(r.posting_id)) : open;
+  let rs = pool.filter(r => (starOnly ? saved.has(r.posting_id) : (!inRoleOnly || r.in_role)) && (!emp || r.employer === emp) &&
+    (!loc || r._loc.includes(loc)) && (!q || r._title.includes(q) || r._emp.includes(q)) &&
+    (!remoteOnly || REMOTE.test(r.location) || REMOTE.test(r.title)));
+  if (d) rs = rs.filter(r => { const n = age(r); return d === "31" ? n > 30 : n <= +d; });
   const dir = $("sort").value === "old" ? 1 : -1;
   rs.sort((a, b) => dir * a.first_seen.localeCompare(b.first_seen) || a.posting_id.localeCompare(b.posting_id));
   view = rs;
-  if (!rs.some(r => r.posting_id === selId)) selId = rs.length ? rs[0].posting_id : null;
-  $("count").textContent = `${plural(rs.length, "open posting")}${inRoleOnly ? " in role" : ""}`;
+  if (!rs.some(r => r.posting_id === selId)) { selId = rs.length ? rs[0].posting_id : null; picked = false; }
+  $("count").textContent = starOnly ? plural(rs.length, "saved posting") : `${plural(rs.length, "open posting")}${inRoleOnly ? " in role" : ""}`;
   $("savedN").textContent = saved.size;
   $("list").innerHTML = rs.slice(0, limit).map(card).join("") ||
-    `<div class="empty">No postings match. ${inRoleOnly ? "Try <strong>All postings</strong>, or " : "Try "}fewer filters.</div>`;
+    `<div class="empty">${starOnly ? "Nothing saved yet. Tap the ☆ on a posting to keep it here." : `No postings match. ${inRoleOnly ? "Try <strong>All postings</strong>, or " : "Try "}fewer filters.`}</div>`;
   $("more").hidden = rs.length <= limit;
   $("more").textContent = `Show more (${Math.min(200, rs.length - limit)} of ${(rs.length - limit).toLocaleString()} left)`;
-  showDetail();
+  syncControls(); writeHash(); showDetail();
 }
 function card(r) {
-  const on = saved.has(r.posting_id);
+  const on = saved.has(r.posting_id), gone = isGone(r);
   return `<div class="job${r.posting_id === selId ? " sel" : ""}" tabindex="0" data-id="${esc(r.posting_id)}">
     ${mono(r.employer)}
     <div class="body"><div class="ttl">${esc(r.title)}</div>
       <div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div>
-      <div class="meta">${r.in_role ? '<span class="tag">in role</span>' : ""}${(!r.first_run && daysOpen(r) <= 0) ? '<span class="tag alt">new today</span>' : ""}first seen ${esc(r.first_seen)}${r.first_run ? " (already open at first run)" : ""}</div></div>
+      <div class="meta">${gone ? `<span class="tag warn">removed ${esc(r.removed_date)}</span>` : ""}${r.in_role ? '<span class="tag">in role</span>' : ""}${isNew(r) ? '<span class="tag alt">new today</span>' : ""}first seen ${esc(r.first_seen)}${r.first_run ? " (already open at first run)" : ""}</div></div>
     <div class="side"><button class="star${on ? " on" : ""}" data-star="${esc(r.posting_id)}" aria-label="${on ? "Remove from saved" : "Save"}" title="${on ? "Saved" : "Save"}">${on ? "★" : "☆"}</button>
-      <a class="apply" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">Apply ↗</a></div></div>`;
+      <a class="apply" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">${gone ? "View" : "Apply"} ↗</a></div></div>`;
 }
 function showDetail() {
   const r = view.find(x => x.posting_id === selId), el = $("detail");
   if (!r) { el.innerHTML = '<p class="meta">Select a posting to see its details.</p>'; return; }
   document.body.style.setProperty("--hue", hueOf(r.employer));
-  const n = daysOpen(r), on = saved.has(r.posting_id);
+  const n = age(r), on = saved.has(r.posting_id), gone = isGone(r);
   el.innerHTML = `<button class="btn back" id="back" type="button">← Back to results</button>
     <div class="dhead">${mono(r.employer, true)}<div><h2 class="dtitle">${esc(r.title)}</h2><div class="meta">${esc(r.employer)} · ${esc(r.location) || "no location"}</div></div></div>
-    <div class="badges">${r.in_role ? '<span class="tag">in role</span>' : ""}${(!r.first_run && n <= 0) ? '<span class="tag alt">new today</span>' : ""}${r.first_run ? '<span class="tag dim">open before we started watching</span>' : ""}</div>
-    <div class="actions"><a class="btn primary" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">Apply on ${esc(r.employer)} ↗</a>
+    <div class="badges">${gone ? `<span class="tag warn">removed ${esc(r.removed_date)}</span>` : ""}${r.in_role ? '<span class="tag">in role</span>' : ""}${isNew(r) ? '<span class="tag alt">new today</span>' : ""}${r.first_run ? '<span class="tag dim">open before we started watching</span>' : ""}</div>
+    <div class="actions"><a class="btn primary${gone ? " ghost" : ""}" href="${esc(safeUrl(r.url))}" rel="noopener" target="_blank">${gone ? "View the old posting" : `Apply on ${esc(r.employer)}`} ↗</a>
       <button class="btn" id="saveBtn" type="button">${on ? "★ Saved" : "☆ Save"}</button></div>
+    ${gone ? '<p class="note">The employer no longer lists this posting, so the link may not work.</p>' : ""}
     <dl><dt>First seen</dt><dd>${esc(r.first_seen)}${r.first_run ? " (the day we started watching this employer)" : ""}</dd>
-      <dt>Open for</dt><dd>${r.first_run ? "at least " : ""}${plural(n, "day")}</dd>
+      <dt>${gone ? "Was open for" : "Open for"}</dt><dd>${r.first_run ? "at least " : ""}${plural(n, "day")}</dd>
       <dt>Last seen</dt><dd>${esc(r.last_seen)}</dd>
+      ${gone ? `<dt>Removed</dt><dd>${esc(r.removed_date)}</dd>` : ""}
       <dt>Source</dt><dd>${esc(r.source)}</dd>
       <dt>Location</dt><dd>${esc(r.location) || "not listed"}</dd>
       ${r.department ? `<dt>Department</dt><dd>${esc(r.department)}</dd>` : ""}
@@ -86,22 +124,28 @@ function showDetail() {
 }
 function toggle(id) { saved.has(id) ? saved.delete(id) : saved.add(id); persist(); render(); }
 function select(id, reveal) {
-  selId = id;
+  selId = id; picked = true;
   document.querySelectorAll(".job").forEach(e => e.classList.toggle("sel", e.dataset.id === id));
-  showDetail();
+  writeHash(); showDetail();
   if (reveal) document.body.classList.add("show-detail");
 }
+const change = fn => () => { fn(); limit = 100; render(); };
 
-loadData().then(({ rows, status }) => {
+loadData().then(({ rows: all, status }) => {
   today = lastRunDate(status);
+  rows = all; rows.forEach(r => { r._title = r.title.toLowerCase(); r._emp = r.employer.toLowerCase(); r._loc = r.location.toLowerCase(); });
   open = rows.filter(r => r.status === "open");
   fillEmployers(open.map(r => r.employer)); fillLocations(open);
-  ["q", "location", "employer", "days", "sort"].forEach(id => $(id).addEventListener("input", () => { limit = 100; render(); }));
+  readHash();
+  FIELDS.forEach(id => $(id).addEventListener("input", () => { limit = 100; render(); }));
   $("search").addEventListener("submit", e => { e.preventDefault(); limit = 100; render(); document.activeElement.blur(); });
-  $("roleBtn").onclick = () => { inRoleOnly = true; $("roleBtn").classList.add("on"); $("allBtn").classList.remove("on"); limit = 100; render(); };
-  $("allBtn").onclick = () => { inRoleOnly = false; $("allBtn").classList.add("on"); $("roleBtn").classList.remove("on"); limit = 100; render(); };
-  $("starBtn").onclick = () => { starOnly = !starOnly; $("starBtn").classList.toggle("on", starOnly); limit = 100; render(); };
+  $("roleBtn").onclick = change(() => { inRoleOnly = true; });
+  $("allBtn").onclick = change(() => { inRoleOnly = false; });
+  $("starBtn").onclick = change(() => { starOnly = !starOnly; });
+  $("remoteBtn").onclick = change(() => { remoteOnly = !remoteOnly; });
+  $("filterToggle").onclick = () => { const o = $("filters").classList.toggle("open"); $("filterToggle").setAttribute("aria-expanded", o); };
   $("more").onclick = () => { limit += 200; render(); };
+  window.addEventListener("hashchange", () => { readHash(); limit = 100; render(); });
   $("list").addEventListener("click", e => {
     const s = e.target.closest("[data-star]"); if (s) { toggle(s.dataset.star); return; }
     if (e.target.closest(".apply")) return;
