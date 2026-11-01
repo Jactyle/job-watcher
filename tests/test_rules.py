@@ -18,3 +18,14 @@ def test_in_role(title):
 ])
 def test_not_in_role(title):
     assert not in_role(title)
+
+
+def test_examples_shown_in_the_sites_in_role_help_match_the_rule():
+    """app.js explains "in role" with these example titles; they must agree with the real rule."""
+    shown = open("app.js").read()
+    yes = ["Senior Treasury Analyst", "Data Analyst, Card", "FP&A Analyst", "Product Analyst"]
+    no = ["Business Analyst", "Data Engineer", "Financial Analyst Intern", "Sales Analyst"]
+    for t in yes + no:
+        assert t.replace("&", "&amp;") in shown, t
+    assert all(in_role(t) for t in yes)
+    assert not any(in_role(t) for t in no)
