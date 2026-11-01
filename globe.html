@@ -6,9 +6,7 @@
 <script src="country.js"></script>
 <script src="globe.js"></script>
 <script>
-// this terminal is a point-cloud scan: orange land on a near-black green sphere, cyan markers, cream for your role
-const RGB = { all: "79,232,224", role: "255,241,220" };
-const THEME = { atmo: "255,140,40", sphere: ["#1d3a26", "#0c1d14", "#030804"], grid: "79,232,224", coast: "255,159,58", dots: "#ffb56b", limb: "1,6,3" };
+const RGB = { all: "255,224,138", role: "255,75,58" };   // cream-yellow bubbles, red for your role, on the shared teal globe
 Promise.all([loadData(), fetch("land-110m.json").then(r => { if (!r.ok) throw new Error("map unavailable"); return r.json(); })]).then(([{ rows }, topo]) => {
   const open = rows.filter(r => r.status === "open");
   // Group the open postings by the country read from their location text.
@@ -40,7 +38,6 @@ Promise.all([loadData(), fetch("land-110m.json").then(r => { if (!r.ok) throw ne
   const $ = id => document.getElementById(id), tip = $("tip");
   let pinged = null;   // the marker last pinged, so hovering one marker sounds once
   const globe = createGlobe($("globe"), topo, {
-    theme: THEME,
     onHover(m, x, y) {
       if (!m) { tip.hidden = true; pinged = null; return; }
       if (m.name !== pinged) { pinged = m.name; snd.ping(380 + 120 * Math.log10(m.count + 1)); }

@@ -225,7 +225,7 @@ document.addEventListener("pointerover", e => {
   if (theme === "globe") {
     let seed = 7; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
     const field = (n, color) => Array.from({ length: n }, () => { const x = (rnd() * 100).toFixed(1), y = (rnd() * 100).toFixed(1); return `${x}vw ${y}vh ${color}, ${x}vw ${(+y + 100).toFixed(1)}vh ${color}`; }).join(",");
-    html = `<i class="stars s1" style="box-shadow:${field(70, "rgba(79,232,224,.55)")}"></i><i class="stars s2" style="box-shadow:${field(45, "rgba(255,159,58,.6)")}"></i><i class="stars s3" style="box-shadow:${field(22, "rgba(255,241,220,.8)")}"></i>`;
+    html = `<i class="stars s1" style="box-shadow:${field(70, "rgba(79,232,224,.55)")}"></i><i class="stars s2" style="box-shadow:${field(45, "rgba(255,224,138,.6)")}"></i><i class="stars s3" style="box-shadow:${field(22, "rgba(255,241,220,.8)")}"></i>`;
   }
   document.body.insertAdjacentHTML("afterbegin", `<div class="bgloop bg-${theme}" aria-hidden="true">${html}</div>`);
 })();

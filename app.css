@@ -6,10 +6,10 @@
 @font-face { font-family: "Michroma"; src: url("fonts/michroma.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 :root {
   /* the default terminal (Today); each page sets its own through <html data-theme="...">, see the end of this file */
-  --rgb: 79, 232, 224; --grgb: 255, 159, 58; --wrgb: 255, 75, 58; --shade: 5, 24, 24;
+  --rgb: 79, 232, 224; --grgb: 255, 224, 138; --wrgb: 255, 75, 58; --shade: 5, 24, 24;
   --accent: rgb(var(--rgb)); --accent-hi: #7ff2ea; --on-accent: #031514; --hi: #eafffd; --gold: rgb(var(--grgb)); --warn: rgb(var(--wrgb)); --good: var(--accent); --orange: #ff9f3a;
   --ink: #cdf6f1; --muted: #7fb8b3; --dim: #6fa19d;
-  --bg: #040c0d; --bg1: #0f3530; --bg2: #0a2321; --bg3: #051211; --tintL: transparent; --tintR: transparent;
+  --bg: #040c0d; --bg1: #0f3530; --bg2: #0a2321; --bg3: #051211;
   --glass: rgba(var(--shade), .66); --glass2: rgba(var(--rgb), .10); --line: rgba(var(--rgb), .3);
   --font: "Helvetica Neue", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "Share Tech Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -31,7 +31,6 @@ body::before {
     radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(0, 6, 8, .72) 100%),
     linear-gradient(0deg, rgba(var(--rgb), .26), transparent 120px),
     radial-gradient(900px 520px at 90% -10%, rgba(var(--rgb), .16), transparent 65%),
-    linear-gradient(90deg, var(--tintL), transparent 24%), linear-gradient(270deg, var(--tintR), transparent 24%),
     radial-gradient(1100px 700px at 40% 40%, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
 }
 /* dirty glass: scanlines, fine grain, and a tile of hairline scratches, faint enough that text stays crisp */
@@ -322,28 +321,19 @@ dialog#roleDialog::backdrop { background: rgba(1, 6, 7, .78); backdrop-filter: b
   .globewrap { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* ---------- the terminals: each page is its own screen, set by <html data-theme="..."> ---------- */
+/* ---------- the terminals: each page is its own screen, set by <html data-theme="...">. They differ in shape, pattern, motion and sound, and share ONE palette (the tokens in :root), as the course outline asks for one set of colors. ---------- */
 /* a boot label, a prompt and a blinking cursor, the same on every terminal */
 h1::before { display: block; margin-bottom: 12px; font: 400 .68rem var(--mono); letter-spacing: .34em; text-transform: uppercase; color: var(--gold); text-shadow: none; }
 .sub::after { content: "▍"; margin-left: 6px; color: var(--accent); animation: cursor 1.1s steps(1) infinite; }
 
-/* TERMINAL 01 // RADAR (Today): teal-green night vision with orange point-cloud accents, a HUD bezel and a diamond lattice */
-html[data-theme="today"] {
-  --rgb: 79, 232, 224; --grgb: 255, 159, 58; --wrgb: 255, 75, 58; --shade: 5, 24, 24; --accent-hi: #7ff2ea; --on-accent: #031514; --hi: #eafffd;
-  --ink: #cdf6f1; --muted: #7fb8b3; --dim: #6fa19d; --bg1: #0f3530; --bg2: #0a2321; --bg3: #051211;
-  --lattice: repeating-linear-gradient(45deg, rgba(var(--rgb), .34) 0 1px, transparent 1px 30px), repeating-linear-gradient(-45deg, rgba(var(--rgb), .34) 0 1px, transparent 1px 30px);
-}
+/* TERMINAL 01 // RADAR (Today): a HUD bezel and a diamond lattice */
+html[data-theme="today"] { --lattice: repeating-linear-gradient(45deg, rgba(var(--rgb), .34) 0 1px, transparent 1px 30px), repeating-linear-gradient(-45deg, rgba(var(--rgb), .34) 0 1px, transparent 1px 30px); }
 html[data-theme="today"] h1::before { content: "Terminal 01 // Radar"; }
 html[data-theme="today"] .sub::before { content: "// "; }
 html[data-theme="today"]::after { display: none; }
 
-/* TERMINAL 02 // MONITOR (Browse): a blue instrument screen with cream readouts, ruler ticks, a blue left edge and a red right edge */
-html[data-theme="browse"] {
-  --rgb: 84, 190, 255; --grgb: 255, 233, 160; --wrgb: 255, 80, 60; --shade: 6, 22, 40; --accent-hi: #8fd4ff; --on-accent: #031220; --hi: #eaf7ff;
-  --ink: #d2ecfb; --muted: #84a9c4; --dim: #7f9fb8; --bg1: #0d3250; --bg2: #081f35; --bg3: #040e1a;
-  --tintL: rgba(40, 90, 255, .24); --tintR: rgba(255, 70, 50, .17);
-  --lattice: repeating-linear-gradient(90deg, rgba(var(--rgb), .3) 0 1px, transparent 1px 120px), repeating-linear-gradient(0deg, rgba(var(--rgb), .14) 0 1px, transparent 1px 14px);
-}
+/* TERMINAL 02 // MONITOR (Browse): ruler ticks down both sides, a column grid, numbered records */
+html[data-theme="browse"] { --lattice: repeating-linear-gradient(90deg, rgba(var(--rgb), .3) 0 1px, transparent 1px 120px), repeating-linear-gradient(0deg, rgba(var(--rgb), .14) 0 1px, transparent 1px 14px); }
 html[data-theme="browse"] h1::before { content: "Terminal 02 // Monitor"; }
 html[data-theme="browse"] .sub::before { content: "> "; }
 html[data-theme="browse"] h1::after { width: 120px; }
@@ -358,12 +348,8 @@ html[data-theme="browse"] .job::before { content: "REC " counter(rec); position:
 html[data-theme="browse"] .job.skel::before { display: none; }
 html[data-theme="browse"] #count::before { content: "QUERY › "; color: var(--gold); }
 
-/* TERMINAL 03 // BIOMETRICS (Market): a steel-blue lab screen with white-ice readouts, square bracketed windows, pipe lines and a column of code */
-html[data-theme="market"] {
-  --rgb: 170, 226, 246; --grgb: 255, 255, 255; --wrgb: 255, 112, 92; --shade: 10, 30, 44; --accent-hi: #d4f1fc; --on-accent: #05141c; --hi: #ffffff;
-  --ink: #dcecf4; --muted: #8fb0c0; --dim: #94b4c4; --bg1: #1b4560; --bg2: #0e2838; --bg3: #07131c;
-  --lattice: repeating-linear-gradient(0deg, rgba(var(--rgb), .16) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(var(--rgb), .1) 0 1px, transparent 1px 48px);
-}
+/* TERMINAL 03 // BIOMETRICS (Market): square bracketed windows, pipe lines, crop marks and a column of code */
+html[data-theme="market"] { --lattice: repeating-linear-gradient(0deg, rgba(var(--rgb), .16) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(var(--rgb), .1) 0 1px, transparent 1px 48px); }
 html[data-theme="market"] h1 { font-family: var(--mono); font-size: clamp(1.5rem, 3vw, 1.9rem); letter-spacing: .34em; text-shadow: 0 0 12px rgba(var(--rgb), .5); }
 html[data-theme="market"] h1::before { content: "Terminal 03 // Biometrics"; }
 html[data-theme="market"] .sub::before { content: "# "; }
@@ -383,21 +369,17 @@ html[data-theme="market"] .btn, html[data-theme="market"] button.linkbtn { borde
   -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
 main { position: relative; z-index: 1; }
 
-/* TERMINAL 04 // POINT CLOUD (Globe): a near-black scan in orange, with radar rings and cyan beams */
-html[data-theme="globe"] {
-  --rgb: 255, 159, 58; --grgb: 79, 232, 224; --wrgb: 255, 75, 58; --shade: 6, 20, 14; --accent-hi: #ffb867; --on-accent: #1a0c00; --hi: #fff1dc;
-  --ink: #f0e6d8; --muted: #b39d82; --dim: #9c8d7a; --bg1: #15291d; --bg2: #0b1a12; --bg3: #040a06;
-  --lattice: none;
-}
+/* TERMINAL 04 // POINT CLOUD (Globe): radar rings and beams behind the globe */
+html[data-theme="globe"] { --lattice: none; }
 html[data-theme="globe"] h1::before { content: "Terminal 04 // Point cloud"; }
 html[data-theme="globe"] .sub::before { content: "$ "; }
 html[data-theme="globe"]::before { display: none; }
 html[data-theme="globe"]::after { inset: 0; top: 0; bottom: 0; left: 0; right: 0; z-index: 0;
   background:
     repeating-radial-gradient(circle at 33% 54%, transparent 0 92px, rgba(var(--rgb), .09) 92px 93px),
-    linear-gradient(24deg, transparent 49.9%, rgba(var(--grgb), .34) 50%, transparent 50.1%),
-    linear-gradient(-14deg, transparent 49.9%, rgba(var(--grgb), .24) 50%, transparent 50.1%),
-    linear-gradient(7deg, transparent 49.9%, rgba(var(--grgb), .2) 50%, transparent 50.1%); }
+    linear-gradient(24deg, transparent 49.9%, rgba(var(--rgb), .34) 50%, transparent 50.1%),
+    linear-gradient(-14deg, transparent 49.9%, rgba(var(--rgb), .24) 50%, transparent 50.1%),
+    linear-gradient(7deg, transparent 49.9%, rgba(var(--rgb), .2) 50%, transparent 50.1%); }
 html[data-theme="globe"] .btn, html[data-theme="globe"] button.info, html[data-theme="globe"] .seg { border-radius: 2px; }
 html[data-theme="globe"] .stage .tip { border-radius: 2px; }
 
