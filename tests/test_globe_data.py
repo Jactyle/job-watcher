@@ -90,3 +90,14 @@ def test_every_terminal_has_its_own_background_loop_and_ambient_sound():
         assert f".bg-{theme}" in css, theme
         assert f"{theme}:" in js.split("backgroundLoop")[1], theme
         assert f"    {theme}(c, k)" in sfx, theme
+
+
+def test_every_page_shares_one_palette():
+    """The outline asks for one set of fonts and colors. The four page themes may differ in patterns, shapes and motion, but a
+    theme block in app.css must not define color tokens: the palette lives only in :root."""
+    css = (ROOT / "app.css").read_text()
+    blocks = re.findall(r'html\[data-theme="(\w+)"\] \{([^}]*)\}', css)
+    assert {name for name, _ in blocks} == {"today", "browse", "market", "globe"}
+    for name, body in blocks:
+        tokens = set(re.findall(r"(--[\w-]+):", body))
+        assert tokens <= {"--lattice"}, (name, tokens)
