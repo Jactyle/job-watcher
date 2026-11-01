@@ -1,0 +1,83 @@
+<!doctype html><html lang="en" data-theme="globe"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="An interactive 3D globe of where the open job postings are, by country."><meta name="theme-color" content="#040c0d"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="preload" href="fonts/share-tech-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/michroma.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="app.css">
+<script>try{var d=document.documentElement;if(!sessionStorage.getItem("job-watcher-booted")&&!navigator.webdriver&&location.hash.length<2&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&localStorage.getItem("job-watcher-fx")!=="off"){d.classList.add("intro");setTimeout(function(){d.classList.remove("intro")},15000)}}catch(e){}</script><title>Job Watcher: Globe</title></head>
+<body><main id="main"><h1>Globe</h1><p class="sub">Loading…</p><div class="skel panel"></div></main>
+<script src="sfx.js"></script>
+<script src="app.js"></script>
+<script src="country.js"></script>
+<script src="globe.js"></script>
+<script>
+// this terminal is a point-cloud scan: orange land on a near-black green sphere, cyan markers, cream for your role
+const RGB = { all: "79,232,224", role: "255,241,220" };
+const THEME = { atmo: "255,140,40", sphere: ["#1d3a26", "#0c1d14", "#030804"], grid: "79,232,224", coast: "255,159,58", dots: "#ffb56b", limb: "1,6,3" };
+Promise.all([loadData(), fetch("land-110m.json").then(r => { if (!r.ok) throw new Error("map unavailable"); return r.json(); })]).then(([{ rows }, topo]) => {
+  const open = rows.filter(r => r.status === "open");
+  // Group the open postings by the country read from their location text.
+  const by = new Map(); let noCountry = 0;
+  for (const r of open) {
+    const c = countryOf(r.location);
+    if (!c || !COUNTRY_POS[c]) { noCountry++; continue; }
+    let g = by.get(c); if (!g) by.set(c, g = { all: 0, role: 0, emp: new Map() });
+    g.all++; if (r.in_role) g.role++;
+    let e = g.emp.get(r.employer); if (!e) g.emp.set(r.employer, e = { all: 0, role: 0 });
+    e.all++; if (r.in_role) e.role++;
+  }
+  let mode = "all", sel = null;
+  const link = (params) => "browse.html#" + new URLSearchParams({ ...params, ...(mode === "all" ? { role: "all" } : {}) });
+  document.getElementById("main").innerHTML = `<h1>Globe</h1>
+    <p class="sub">Where the open postings are, by country. Drag to rotate, click a bubble to see who is hiring there.</p>
+    <div class="globewrap">
+      <div class="stage"><canvas id="globe" tabindex="0" role="img" aria-label="Interactive globe of open postings by country. Use the arrow keys to rotate and plus and minus to zoom. The list beside it has the same numbers."></canvas>
+        <div class="tip" id="tip" hidden></div>
+        <div class="ctrls"><button class="btn" id="zin" type="button" aria-label="Zoom in">+</button><button class="btn" id="zout" type="button" aria-label="Zoom out">−</button><button class="btn" id="spin" type="button" aria-pressed="false">Spin</button><button class="btn" id="reset" type="button">Reset</button></div>
+        <p class="meta hint">Drag to rotate · pinch or ctrl/⌘ + scroll to zoom</p></div>
+      <aside class="gpanel">
+        <div class="segrow"><div class="seg" id="modeSeg"><button class="btn on" id="mAll" type="button">All open postings</button><button class="btn" id="mRole" type="button">In role</button></div>${ROLE_BTN}</div>
+        <p class="meta" id="summary"></p>
+        <div id="gdetail"></div>
+        <ol class="rank" id="rank"></ol>
+      </aside>
+    </div>`;
+  const $ = id => document.getElementById(id), tip = $("tip");
+  let pinged = null;   // the marker last pinged, so hovering one marker sounds once
+  const globe = createGlobe($("globe"), topo, {
+    theme: THEME,
+    onHover(m, x, y) {
+      if (!m) { tip.hidden = true; pinged = null; return; }
+      if (m.name !== pinged) { pinged = m.name; snd.ping(380 + 120 * Math.log10(m.count + 1)); }
+      tip.hidden = false; tip.innerHTML = `<b>${esc(m.name)}</b><br>${plural(m.count, "open posting")}`;
+      tip.style.left = Math.min(x + 14, $("globe").clientWidth - 150) + "px"; tip.style.top = Math.max(4, y - 10) + "px";
+    },
+    onSelect(m) { if (m) snd.ping(260, true); choose(m ? m.name : null, false); },
+    onSpin(on) { $("spin").classList.toggle("on", on); $("spin").setAttribute("aria-pressed", on); },
+  });
+  const list = () => [...by].filter(([, g]) => g[mode] > 0).map(([name, g]) => ({ name, lat: COUNTRY_POS[name][0], lon: COUNTRY_POS[name][1], count: g[mode] })).sort((a, b) => b.count - a.count);
+
+  function panel() {
+    const L = list(), total = L.reduce((a, m) => a + m.count, 0), max = L.length ? L[0].count : 1;
+    $("summary").textContent = `${plural(total, "open posting")} in ${L.length} ${L.length === 1 ? "country" : "countries"}${mode === "role" ? " in your role" : ""}. ${plural(noCountry, "posting")} name no country (such as Hybrid or Remote) and are not on the globe.`;
+    $("rank").innerHTML = L.map((m, i) => `<li><button type="button" class="${m.name === sel ? "on" : ""}" data-c="${esc(m.name)}"><span class="rk">${i + 1}</span><span class="nm">${esc(m.name)}</span><span class="bar"><i style="width:${Math.max(2, 100 * m.count / max)}%"></i></span><span class="ct">${m.count.toLocaleString()}</span></button></li>`).join("") || '<li class="meta">Nothing to show yet.</li>';
+    const g = sel && by.get(sel);
+    if (!g || !g[mode]) { $("gdetail").innerHTML = '<p class="meta">Click a bubble or a country in the list to see which employers are hiring there.</p>'; return; }
+    const emps = [...g.emp].filter(([, e]) => e[mode] > 0).sort((a, b) => b[1][mode] - a[1][mode]);
+    $("gdetail").innerHTML = `<div class="gsel"><h2>${esc(sel)}</h2>
+      <p class="meta">${plural(g.all, "open posting")}, ${g.role.toLocaleString()} in role · ${plural(emps.length, "employer")}</p>
+      <a class="btn primary" href="${esc(link({ country: sel }))}">Browse these postings ↗</a>
+      <ul class="emps">${emps.slice(0, 8).map(([n, e]) => `<li><a href="${esc(link({ country: sel, employer: n }))}">${esc(n)}</a><span>${e[mode].toLocaleString()}</span></li>`).join("")}</ul>
+      ${emps.length > 8 ? `<p class="meta">and ${emps.length - 8} more employers.</p>` : ""}</div>`;
+  }
+  function choose(name, fly) {
+    sel = name; globe.select(name); if (name && fly) globe.focus(name); panel();
+    if (name && !fly) globe.setSpin(false);
+  }
+  function setMode(m) {
+    mode = m; $("mAll").classList.toggle("on", m === "all"); $("mRole").classList.toggle("on", m === "role");
+    globe.setMarkers(list(), RGB[m]); if (sel && !(by.get(sel) || {})[m]) sel = null; globe.select(sel); panel();
+  }
+  $("rank").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) choose(b.dataset.c === sel ? null : b.dataset.c, true); });
+  $("mAll").onclick = () => setMode("all"); $("mRole").onclick = () => setMode("role");
+  $("zin").onclick = () => globe.zoomBy(1.25); $("zout").onclick = () => globe.zoomBy(0.8);
+  $("spin").onclick = () => globe.setSpin(!globe.spinning); $("reset").onclick = () => globe.reset();
+  $("spin").classList.toggle("on", globe.spinning); $("spin").setAttribute("aria-pressed", globe.spinning);
+  setMode("all");
+}).catch(showError);
+</script></body></html>
