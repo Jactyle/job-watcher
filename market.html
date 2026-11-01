@@ -1,34 +1,77 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04060c"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="app.css"><title>Job Watcher: Market</title></head>
+<!doctype html><html lang="en" data-theme="market"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="A market report computed in your browser from the posting history: new and removed postings, openings per employer, how long postings stay open, and top locations."><meta name="theme-color" content="#040c0d"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="preload" href="fonts/share-tech-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/michroma.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="app.css">
+<script>try{var d=document.documentElement;if(!sessionStorage.getItem("job-watcher-booted")&&!navigator.webdriver&&location.hash.length<2&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&localStorage.getItem("job-watcher-fx")!=="off"){d.classList.add("intro");setTimeout(function(){d.classList.remove("intro")},15000)}}catch(e){}</script><title>Job Watcher: Market</title></head>
 <body><main id="main"><h1>Market</h1><p class="sub">Loading…</p><div class="skel panel"></div><div class="skel panel"></div></main>
+<script src="sfx.js"></script>
 <script src="app.js"></script>
 <script src="country.js"></script>
 <script>
-const C = { all: "#5aa9ff", role: "#ffd166", bar: "#5aa9ff", bar2: "#b79cff" };
+// chart colors come from this terminal's palette in app.css, so they change with the theme
+const cv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { all: cv("--accent"), role: cv("--gold"), bar: cv("--accent"), bar2: cv("--warn") };
 const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : null; };
 const dayStr = n => new Date(n * 86400000).toISOString().slice(0, 10);
 
-// Vertical bars; series is [{name,color,values}] aligned with labels.
-function barChart(labels, series, fmt = v => v) {
+// Charts in the style of a glass display: each bar fades out downward and ends in a bright cap, the grid is dotted, and the axis has ticks.
+let chartSeq = 0;
+const CAP = cv("--hi");
+const gradients = (id, colors, across) => `<defs>${colors.map((c, j) => `<linearGradient id="${id}-${j}" x1="0" y1="0" x2="${across ? 1 : 0}" y2="${across ? 0 : 1}">` +
+  (across ? `<stop offset="0" stop-color="${c}" stop-opacity=".05"/><stop offset="1" stop-color="${c}" stop-opacity=".9"/>` : `<stop offset="0" stop-color="${c}" stop-opacity=".95"/><stop offset="1" stop-color="${c}" stop-opacity=".04"/>`) + "</linearGradient>").join("")}</defs>`;
+
+// Vertical bars; series is [{name,color,values}] aligned with labels. links is optional: one Browse URL per label, and the bar becomes a link.
+function barChart(labels, series, fmt = v => v.toLocaleString(), links = null) {
   if (!labels.length) return '<p class="meta">Not enough history yet.</p>';
-  const W = 720, H = 240, L = 40, B = 46, T = 10, n = labels.length, k = series.length;
+  // Everything is measured from the data so nothing spills out of the chart: the left margin fits the widest axis number, the labels lie flat
+  // when they fit side by side (and tilt only when they do not), and the chart reserves exactly the height the tilted labels need.
+  const id = "bc" + (++chartSeq), W = 720, T = 12, CH = 6.3, n = labels.length, k = series.length;   // CH: about one character's width
   const max = Math.max(1, ...series.flatMap(s => s.values));
+  const P = series.every(s => s.values.every(v => v === 0)) ? 96 : 184;   // the height of the plot itself; a chart with nothing in it yet is kept short
+  const steps = max >= 4 ? 4 : Math.max(1, Math.ceil(max));   // counts are whole numbers, so a small axis ticks 0, 1, 2, 3
+  const L = Math.max(40, Math.ceil(fmt(max).length * CH) + 18);
   const slot = (W - L) / n, bw = Math.max(2, Math.min(40, slot * 0.8 / k));
-  let out = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">`;
-  for (let i = 0; i <= 4; i++) {
-    const y = T + (H - T - B) * (1 - i / 4);
-    out += `<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(max >= 10 ? Math.round(max * i / 4) : Math.round(max * i / 4 * 10) / 10)}</text>`;
+  const every = Math.ceil(n / 12), maxLen = Math.max(14, Math.floor(slot / 6.5));
+  const text = labels.map(lb => (lb.length > maxLen ? lb.slice(0, maxLen - 1) + "…" : lb));
+  const longest = Math.max(...text.filter((_, i) => i % every === 0).map(s => s.length));
+  const flat = longest * CH + 10 <= slot * every;
+  const B = flat ? 32 : Math.ceil(14 + longest * CH * 0.574 + 10), H = T + P + B;
+  let out = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">` + gradients(id, series.map(s => s.color), false);
+  for (let i = 0; i <= steps; i++) {
+    const y = T + P * (1 - i / steps);
+    out += `<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="1 5"/><line x1="${L - 5}" x2="${L}" y1="${y}" y2="${y}" stroke="currentColor" stroke-opacity=".7"/>` +
+      `<text x="${L - 9}" y="${y + 4}" text-anchor="end">${fmt(Math.round(max * i / steps))}</text>`;
   }
-  const every = Math.ceil(n / 12);
   labels.forEach((lb, i) => {
     const x0 = L + i * slot + (slot - bw * k) / 2;
+    if (links) out += `<a href="${esc(links[i])}"><rect class="hit" fill="transparent" x="${L + i * slot}" y="${T}" width="${slot}" height="${P}"><title>${esc(lb)}: ${series[0].values[i].toLocaleString()} (click to browse these postings)</title></rect>`;
     series.forEach((s, j) => {
-      const h = (H - T - B) * s.values[i] / max;
-      out += `<rect x="${x0 + j * bw}" y="${H - B - h}" width="${bw - 1}" height="${h}" fill="${s.color}"><title>${esc(lb)}: ${s.values[i]}</title></rect>`;
+      const h = P * s.values[i] / max, y = T + P - h;
+      out += `<rect x="${x0 + j * bw}" y="${y}" width="${bw - 1}" height="${h}" fill="url(#${id}-${j})"><title>${esc(lb)}: ${s.values[i]}</title></rect>`;
+      if (h > 0) out += `<rect x="${x0 + j * bw}" y="${y}" width="${bw - 1}" height="2" fill="${CAP}" style="pointer-events:none"/>`;
     });
-    if (i % every === 0) out += `<text x="${L + i * slot + slot / 2}" y="${H - B + 14}" text-anchor="end" transform="rotate(-35 ${L + i * slot + slot / 2} ${H - B + 14})">${esc(lb.length > 14 ? lb.slice(0, 13) + "…" : lb)}</text>`;
+    if (links) out += "</a>";
+    if (i % every === 0) {
+      const cx = L + i * slot + slot / 2, cy = T + P + 16;
+      out += flat ? `<text x="${cx}" y="${cy}" text-anchor="middle">${esc(text[i])}</text>`
+                  : `<text x="${cx}" y="${cy}" text-anchor="end" transform="rotate(-35 ${cx} ${cy})">${esc(text[i])}</text>`;
+    }
   });
-  const legend = k > 1 ? `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>` : "";
+  const legend = k > 1 ? `<div class="legend">${series.map(s => `<span><i style="background:${s.color};color:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>` : "";
   return legend + out + "</svg>";
+}
+const browseUrl = params => "browse.html#" + new URLSearchParams({ ...params, role: "all" });
+// Horizontal bars with every label shown, for a long list such as the employers. links is optional, one Browse URL per row.
+function hbarChart(labels, values, color, links = null) {
+  if (!labels.length) return '<p class="meta">Not enough history yet.</p>';
+  const id = "hc" + (++chartSeq), W = 720, L = 150, R = 58, rowH = 20, T = 4, H = T * 2 + rowH * labels.length, max = Math.max(1, ...values), pw = W - L - R;
+  let out = `<svg class="chart hbar" viewBox="0 0 ${W} ${H}" role="img">` + gradients(id, [color], true) + `<line x1="${L}" x2="${L}" y1="${T}" y2="${H - T}" stroke="currentColor" stroke-opacity=".5"/>`;
+  labels.forEach((lb, i) => {
+    const y = T + i * rowH, w = Math.max(2, pw * values[i] / max), ty = y + rowH / 2 + 4;
+    const row = `<rect class="hit" fill="transparent" x="0" y="${y}" width="${W}" height="${rowH}"><title>${esc(lb)}: ${values[i].toLocaleString()}${links ? " (click to browse these postings)" : ""}</title></rect>` +
+      `<text x="${L - 8}" y="${ty}" text-anchor="end">${esc(lb.length > 22 ? lb.slice(0, 21) + "…" : lb)}</text>` +
+      `<rect x="${L}" y="${y + 4}" width="${w}" height="${rowH - 8}" fill="url(#${id}-0)"/><rect x="${L + w - 2}" y="${y + 4}" width="2" height="${rowH - 8}" fill="${CAP}" style="pointer-events:none"/>` +
+      `<text x="${L + w + 7}" y="${ty}" style="fill:var(--gold)">${values[i].toLocaleString()}</text>`;
+    out += links ? `<a href="${esc(links[i])}">${row}</a>` : row;
+  });
+  return out + "</svg>";
 }
 const tally = (rs, key) => rs.reduce((m, r) => (m.set(r[key], (m.get(r[key]) || 0) + 1), m), new Map());
 const section = (h, p, chart) => `<div class="section"><h2>${h}</h2><p>${p}</p>${chart}</div>`;
@@ -45,7 +88,7 @@ loadData().then(({ rows, status }) => {
   const newAll = perDay(fresh, "first_seen"), newRole = perDay(fresh.filter(r => r.in_role), "first_seen");
   const s1 = section(
     `${plural(newAll.reduce((a, b) => a + b, 0), "new posting")} since the first run, ${newRole.reduce((a, b) => a + b, 0)} in role`,
-    "Postings first seen on each day. Postings that were already open when a source was first watched are left out, because their real start date is unknown.",
+    `Postings first seen on each day. Postings that were already open when a source was first watched are left out, because their real start date is unknown. <button class="linkbtn" type="button" data-rolehelp>What does “in role” mean?</button>`,
     barChart(days, [{ name: "All postings", color: C.all, values: newAll }, { name: "In role", color: C.role, values: newRole }]));
 
   // 2 removed per day
@@ -60,27 +103,29 @@ loadData().then(({ rows, status }) => {
   const byEmp = [...tally(open, "employer")].sort((a, b) => b[1] - a[1]);
   const s3 = section(`${byEmp.length ? esc(byEmp[0][0]) : "No employer"} has the most open postings${byEmp.length ? " (" + byEmp[0][1].toLocaleString() + ")" : ""}`,
     `Open postings per employer as of the last run (${esc(last)}); ${open.length.toLocaleString()} open in total.`,
-    barChart(byEmp.map(e => e[0]), [{ name: "Open", color: C.bar, values: byEmp.map(e => e[1]) }]));
+    hbarChart(byEmp.map(e => e[0]), byEmp.map(e => e[1]), C.bar, byEmp.map(e => browseUrl({ employer: e[0] }))) +
+    '<p class="meta">Click a bar to browse that employer\'s open postings.</p>');
 
   // 4 days open, 5 share removed within seven days
   const spans = gone.filter(r => !r.first_run).map(r => dayNum(r.removed_date) - dayNum(r.first_seen));
   const med = median(spans);
   const buckets = [["0-1", 0, 1], ["2-3", 2, 3], ["4-7", 4, 7], ["8-14", 8, 14], ["15-30", 15, 30], ["31+", 31, 1e9]];
-  const s4 = section(med === null ? "No removed postings with a known start date yet" : `Postings stay open a median of ${med} days`,
+  const s4 = section(med === null ? "No removed postings with a known start date yet" : `Postings stay open a median of ${med} ${med === 1 ? "day" : "days"}`,
     `Removed postings that were not open at the first run, measured as removed date minus first-seen date (${plural(spans.length, "posting")}).`,
-    !spans.length ? '<p class="meta">Nothing to chart yet. This fills in as postings first seen after the first run get removed.</p>' : barChart(buckets.map(b => b[0]), [{ name: "Postings", color: C.bar, values: buckets.map(([, lo, hi]) => spans.filter(v => v >= lo && v <= hi).length) }]));
+    (spans.length ? "" : '<p class="meta">Nothing to chart yet. This fills in as postings first seen after the first run get removed.</p>') + barChart(buckets.map(b => b[0]), [{ name: "Postings", color: C.bar, values: buckets.map(([, lo, hi]) => spans.filter(v => v >= lo && v <= hi).length) }]));
   const eligible = fresh.filter(r => lastN - dayNum(r.first_seen) >= 7);
   const fast = eligible.filter(r => r.removed_date && dayNum(r.removed_date) - dayNum(r.first_seen) <= 7);
   const share = eligible.length ? fast.length / eligible.length : null;
   const s5 = section(share === null ? "Not enough history for the seven-day share yet" : `${(share * 100).toFixed(1)}% of postings are removed within seven days`,
     `Among ${plural(eligible.length, "posting")} that were not open at the first run and were first seen at least seven days before the last run, ${fast.length.toLocaleString()} were removed within seven days.`,
-    share === null ? `<p class="meta">Nothing to chart yet. This needs a posting first seen after the first run that is at least seven days old, so it fills in from ${dayStr(dayNum(first) + 8)} on.</p>` : barChart(["Removed within 7 days", "Still open or later"], [{ name: "Postings", color: C.bar, values: [fast.length, eligible.length - fast.length] }]));
+    (share === null ? `<p class="meta">Nothing to chart yet. This needs a posting first seen after the first run that is at least seven days old, so it fills in from ${dayStr(dayNum(first) + 8)} on.</p>` : "") + barChart(["Removed within 7 days", "Still open or later"], [{ name: "Postings", color: C.bar, values: [fast.length, eligible.length - fast.length] }]));
 
   // 6 top locations among open
   const locs = [...tally(open.filter(r => r.location), "location")].sort((a, b) => b[1] - a[1]).slice(0, 12);
   const s6 = section(locs.length ? `${esc(locs[0][0])} is the top location` : "No locations yet",
     "The twelve most common locations among open postings, as the employers write them.",
-    barChart(locs.map(l => l[0]), [{ name: "Open", color: C.bar, values: locs.map(l => l[1]) }]));
+    barChart(locs.map(l => l[0]), [{ name: "Open", color: C.bar, values: locs.map(l => l[1]) }], undefined, locs.map(l => browseUrl({ location: l[0] }))) +
+    '<p class="meta">Click a bar to browse the open postings there.</p>');
 
   // 7 (extra) open postings outside the US. The country is read from the location text by country.js.
   const placed = open.map(r => ({ country: countryOf(r.location), in_role: r.in_role }));
@@ -94,5 +139,11 @@ loadData().then(({ rows, status }) => {
 
   document.getElementById("main").innerHTML = `<h1>Market</h1>
     <p class="sub">Computed in your browser from data/history.csv · ${watched} days of history, last run ${esc(last)}</p>${s1}${s2}${s3}${s4}${s5}${s6}${s7}`;
+  // a column of code scrolling by behind the windows, like the sequence readout on a lab screen (decoration only)
+  const dna = document.createElement("div"); dna.className = "dna"; dna.setAttribute("aria-hidden", "true");
+  let seed = 2049; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const code = Array.from({ length: 90 }, () => Array.from({ length: 5 }, () => [0, 1, 2].map(() => "ACGT"[Math.floor(rnd() * 4)]).join("")).join("-")).join("\n");
+  dna.innerHTML = `<div class="dna-in">${code}\n${code}</div>`;   // twice, so the column can scroll without a seam
+  document.body.appendChild(dna);
 }).catch(showError);
 </script></body></html>
