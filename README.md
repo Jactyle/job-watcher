@@ -16,7 +16,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `pipeline/normalize.py` | Converts each ATS's raw JSON into the common columns. |
 | `pipeline/rules.py` | The title rule (`in_role`). |
 | `pipeline/build.py` | Builds `data/history.csv` from the raw files alone and computes `data/status.json`. |
-| `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. |
+| `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. It lists every new and removed posting with a link; a day too big for one issue body (GitHub allows 65,536 characters) continues in comments on the same issue, which a second run on the same day replaces. |
 | `pipeline/logos.py` | Downloads each employer's icon into `logos/` (`python -m pipeline.logos`). Run by hand when an employer is added; the daily run does not use it. |
 | `pipeline/run.py` | One daily run: fetch all sources in parallel, save raw, build, write status, open the issue. A failed source or issue step never stops the commit. |
 | `pipeline/__init__.py` | Marks `pipeline` as a Python package. |
@@ -25,7 +25,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `tests/test_build.py` | First-seen, last-seen, removed and reopened logic, `first_run`, sorting, reproducible rebuild, status counts. |
 | `tests/test_run.py` | A failed source is recorded and writes no raw file. |
 | `tests/test_sources.py`, `tests/test_workday_split.py`, `tests/test_eightfold.py` | Fetch helpers: raw file writing, Workday 2,000-result splitting, Microsoft second pass. |
-| `tests/test_issue.py` | The daily issue text. |
+| `tests/test_issue.py` | The daily issue text: every posting is listed, a large day continues in comments and nothing is cut, and a second run on the same day updates the issue and replaces those comments. |
 | `tests/test_logos.py` | Every watched employer has a logo domain and a PNG file in `logos/`. |
 | `tests/test_globe_data.py` | The Globe has a place for every country `country.js` can return, the service worker only caches files that exist and lists every page, every page loads `sfx.js` before `app.js`, the nav links are the four pages, and every manifest icon exists. |
 | `tests/test_country_js.py` | `country.js` run with node: country codes, US states, mixed postings, unknown locations (skipped where node is not installed). |
@@ -56,7 +56,7 @@ Live site: https://jactyle.github.io/job-watcher/
 
 | Source | Employer | ATS |
 |---|---|---|
-| robinhood, coinbase, stripe, affirm, brex, mercury, chime, carta, toast, sofi, gusto, betterment, databricks, airbnb, cloudflare | same names | Greenhouse (`boards-api.greenhouse.io`) |
+| robinhood, coinbase, stripe, affirm, brex, mercury, chime, carta, toast, sofi, gusto, betterment, databricks, airbnb, cloudflare | Robinhood, Coinbase, Stripe, Affirm, Brex, Mercury, Chime, Carta, Toast, SoFi, Gusto, Betterment, Databricks, Airbnb, Cloudflare | Greenhouse (`boards-api.greenhouse.io`) |
 | epicgames, riotgames, roblox, discord, taketwo, rockstargames, bungie, scopely, twitch | Epic Games, Riot Games, Roblox, Discord, Take-Two Interactive, Rockstar Games, Bungie, Scopely, Twitch | Greenhouse |
 | palantir, spotify | Palantir, Spotify | Lever (`api.lever.co`) |
 | ramp, notion, openai, supercell | Ramp, Notion, OpenAI, Supercell | Ashby (`api.ashbyhq.com`) |
@@ -88,4 +88,4 @@ This rewrites `data/history.csv` using only `data/raw/`; running it again produc
 - An open posting is `removed` (with that day's date) when its source has a raw file that day and no longer lists it. A source with no raw file that day (it failed) changes nothing.
 - A removed posting that is listed again becomes `open` with `removed_date` cleared and `first_seen` unchanged.
 - `first_run` is true for postings listed in the first raw file of their source.
-- A second run on the same UTC day deletes that day's raw files, fetches again, rebuilds, and updates that day's issue, so each day counts once.
+- A second run on the same UTC day deletes that day's raw files, fetches again, rebuilds, and updates that day's issue (replacing its continuation comments), so each day counts once.
