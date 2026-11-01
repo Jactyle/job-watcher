@@ -111,3 +111,22 @@ def test_a_second_run_with_a_smaller_day_still_clears_old_comments(monkeypatch):
     calls = _fake_gh(monkeypatch, [{"number": 7, "title": "2026-01-02", "state": "OPEN"}], old_comment_ids="11\n")
     issue.publish("2026-01-02", [])
     assert [c for c in calls if c[:3] == ("api", "-X", "DELETE")] and not [c for c in calls if c[:2] == ("issue", "comment")]
+
+
+def test_digest_issues_are_found_by_their_date_title_not_by_the_label_filter(monkeypatch):
+    """GitHub's label-filtered listing can come back empty, so the lookup must not use it."""
+    from pipeline import issue
+    calls = _fake_gh(monkeypatch, [{"number": 7, "title": "2026-01-02", "state": "OPEN"}])
+    issue.publish("2026-01-02", [])
+    listing = [c for c in calls if c[:2] == ("issue", "list")]
+    assert len(listing) == 1 and "--label" not in listing[0]
+    assert not [c for c in calls if c[:2] == ("issue", "create")]            # today's issue was found, so none is created
+
+
+def test_only_digest_issues_are_ever_closed(monkeypatch):
+    from pipeline import issue
+    calls = _fake_gh(monkeypatch, [{"number": 3, "title": "Bug: the site is slow", "state": "OPEN"},
+                                   {"number": 2, "title": "2026-01-01", "state": "OPEN"}])
+    issue.publish("2026-01-02", [])
+    closes = [c[2] for c in calls if c[:2] == ("issue", "close")]
+    assert closes == ["2"]                                                    # the person's own issue is left alone

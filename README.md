@@ -16,7 +16,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `pipeline/normalize.py` | Converts each ATS's raw JSON into the common columns. |
 | `pipeline/rules.py` | The title rule (`in_role`). |
 | `pipeline/build.py` | Builds `data/history.csv` from the raw files alone and computes `data/status.json`. |
-| `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. It lists every new and removed posting with a link; a day too big for one issue body (GitHub allows 65,536 characters) continues in comments on the same issue, which a second run on the same day replaces. |
+| `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. It lists every new and removed posting with a link; a day too big for one issue body (GitHub allows 65,536 characters) continues in comments on the same issue, which a second run on the same day replaces. Digest issues are found by their date title, not by the label filter, because GitHub's label-filtered listing can come back empty. |
 | `pipeline/logos.py` | Downloads each employer's icon into `logos/` (`python -m pipeline.logos`). Run by hand when an employer is added; the daily run does not use it. |
 | `pipeline/run.py` | One daily run: fetch all sources in parallel, save raw, build, write status, open the issue. A failed source or issue step never stops the commit. |
 | `pipeline/__init__.py` | Marks `pipeline` as a Python package. |

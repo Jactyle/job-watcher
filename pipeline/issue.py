@@ -6,11 +6,13 @@ comments on the same issue (marked with MARK so a second run on the same day can
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 
 LABEL = "daily-digest"
 MAX_PART = 60000          # characters per issue body or comment, safely under GitHub's 65,536
 MARK = "<!-- daily-digest-continued -->"
+DATE_TITLE = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # a digest issue is titled with its date
 
 
 def _link_text(title: str) -> str:
@@ -86,8 +88,10 @@ def publish(date: str, rows: list[dict]) -> None:
     parts = build_parts(date, rows)
     body, extra = parts[0], parts[1:]
     _gh("label", "create", LABEL, "--color", "0e8a16", "--force")
-    issues = json.loads(_gh("issue", "list", "--label", LABEL, "--state", "all", "--limit", "200",
-                            "--json", "number,title,state"))
+    # Digest issues are found by their date title, not by label: GitHub's label-filtered listing can come back empty (it did for every
+    # issue here once), and an empty answer would open a duplicate issue and leave yesterday's open. The plain listing is reliable.
+    issues = [i for i in json.loads(_gh("issue", "list", "--state", "all", "--limit", "200", "--json", "number,title,state"))
+              if DATE_TITLE.match(i["title"])]
     today = next((i for i in issues if i["title"] == date), None)
     number = None
     if today is None:
