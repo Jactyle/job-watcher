@@ -1,225 +1,225 @@
 {
-  "run_time": "2026-11-01T16:05:53Z",
+  "run_time": "2026-11-07T17:57:23Z",
   "first_run_date": "2026-10-29",
-  "days_with_success": 4,
-  "open": 24527,
-  "new_today": 61,
-  "removed_today": 166,
+  "days_with_success": 5,
+  "open": 25136,
+  "new_today": 3536,
+  "removed_today": 3163,
   "sources": [
     {
       "name": "robinhood",
       "ok": true,
-      "count": 160
+      "count": 150
     },
     {
       "name": "coinbase",
       "ok": true,
-      "count": 254
+      "count": 284
     },
     {
       "name": "stripe",
       "ok": true,
-      "count": 746
+      "count": 766
     },
     {
       "name": "affirm",
       "ok": true,
-      "count": 244
+      "count": 222
     },
     {
       "name": "brex",
       "ok": true,
-      "count": 263
+      "count": 268
     },
     {
       "name": "mercury",
       "ok": true,
-      "count": 76
+      "count": 78
     },
     {
       "name": "chime",
       "ok": true,
-      "count": 75
+      "count": 72
     },
     {
       "name": "carta",
       "ok": true,
-      "count": 76
+      "count": 79
     },
     {
       "name": "toast",
       "ok": true,
-      "count": 329
+      "count": 332
     },
     {
       "name": "sofi",
       "ok": true,
-      "count": 62
+      "count": 46
     },
     {
       "name": "gusto",
       "ok": true,
-      "count": 84
+      "count": 83
     },
     {
       "name": "betterment",
       "ok": true,
-      "count": 27
+      "count": 26
     },
     {
       "name": "databricks",
       "ok": true,
-      "count": 909
+      "count": 924
     },
     {
       "name": "airbnb",
       "ok": true,
-      "count": 202
+      "count": 205
     },
     {
       "name": "palantir",
       "ok": true,
-      "count": 301
+      "count": 305
     },
     {
       "name": "spotify",
       "ok": true,
-      "count": 89
+      "count": 85
     },
     {
       "name": "ramp",
       "ok": true,
-      "count": 172
+      "count": 171
     },
     {
       "name": "notion",
       "ok": true,
-      "count": 148
+      "count": 154
     },
     {
       "name": "openai",
       "ok": true,
-      "count": 810
+      "count": 819
     },
     {
       "name": "epicgames",
       "ok": true,
-      "count": 137
+      "count": 131
     },
     {
       "name": "riotgames",
       "ok": true,
-      "count": 184
+      "count": 186
     },
     {
       "name": "roblox",
       "ok": true,
-      "count": 268
+      "count": 270
     },
     {
       "name": "discord",
       "ok": true,
-      "count": 41
+      "count": 27
     },
     {
       "name": "taketwo",
       "ok": true,
-      "count": 35
+      "count": 34
     },
     {
       "name": "rockstargames",
       "ok": true,
-      "count": 24
+      "count": 22
     },
     {
       "name": "bungie",
       "ok": true,
-      "count": 5
+      "count": 4
     },
     {
       "name": "scopely",
       "ok": true,
-      "count": 178
+      "count": 167
     },
     {
       "name": "twitch",
       "ok": true,
-      "count": 63
+      "count": 55
     },
     {
       "name": "cloudflare",
       "ok": true,
-      "count": 463
+      "count": 464
     },
     {
       "name": "supercell",
       "ok": true,
-      "count": 35
+      "count": 34
     },
     {
       "name": "ubisoft",
       "ok": true,
-      "count": 306
+      "count": 298
     },
     {
       "name": "microsoft",
       "ok": true,
-      "count": 2150
+      "count": 2373
     },
     {
       "name": "netflix",
       "ok": true,
-      "count": 403
+      "count": 394
     },
     {
       "name": "apple",
       "ok": true,
-      "count": 122
+      "count": 133
     },
     {
       "name": "amazon",
       "ok": true,
-      "count": 687
+      "count": 701
     },
     {
       "name": "amd",
       "ok": true,
-      "count": 1274
+      "count": 1343
     },
     {
       "name": "servicenow",
       "ok": true,
-      "count": 731
+      "count": 745
     },
     {
       "name": "fidelity",
       "ok": true,
-      "count": 804
+      "count": 855
     },
     {
       "name": "mastercard",
       "ok": true,
-      "count": 1012
+      "count": 945
     },
     {
       "name": "capitalone",
       "ok": true,
-      "count": 2040
+      "count": 2055
     },
     {
       "name": "sony",
       "ok": true,
-      "count": 116
+      "count": 123
     },
     {
       "name": "intel",
       "ok": true,
-      "count": 783
+      "count": 839
     },
     {
       "name": "samsung",
       "ok": true,
-      "count": 590
+      "count": 626
     },
     {
       "name": "adobe",
@@ -229,7 +229,7 @@
     {
       "name": "cisco",
       "ok": true,
-      "count": 1442
+      "count": 1472
     },
     {
       "name": "salesforce",
@@ -239,17 +239,17 @@
     {
       "name": "snap",
       "ok": true,
-      "count": 208
+      "count": 214
     },
     {
       "name": "hp",
       "ok": true,
-      "count": 892
+      "count": 919
     },
     {
       "name": "nvidia",
       "ok": true,
-      "count": 2680
+      "count": 2811
     }
   ]
 }
