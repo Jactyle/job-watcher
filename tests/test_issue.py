@@ -157,7 +157,7 @@ def test_the_shorter_list_leaves_its_space_to_the_longer_one():
     body = build_body("2026-01-02", rows)
     assert body.count("](https://x/new") == 20                                       # the short list is shown in full
     shown_removed = body.count("](https://x/old")
-    assert shown_removed > 250                                                       # more than the old fixed half-share allowed
+    assert shown_removed > 150                                                       # far more than an even half of the space would allow (about 100)
     assert f"…and {1500 - shown_removed} more" in body
 
 
@@ -170,6 +170,11 @@ def test_when_cut_short_every_in_role_posting_is_still_listed_first():
 
 
 def test_a_normal_day_is_listed_in_full():
-    rows = _big_day(n_new=60, n_removed=165)
+    rows = _big_day(n_new=40, n_removed=100)
     body = build_body("2026-01-02", rows)
-    assert body.count("](https://x/new") == 60 and body.count("](https://x/old") == 165 and "…and " not in body
+    assert body.count("](https://x/new") == 40 and body.count("](https://x/old") == 100 and "…and " not in body
+
+
+def test_the_single_body_is_kept_to_about_150_links():
+    body = build_body("2026-01-02", _big_day(n_new=900, n_removed=900))
+    assert len(body) <= 31000 and 100 <= body.count("](https://x/") <= 220

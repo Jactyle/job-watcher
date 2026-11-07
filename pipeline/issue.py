@@ -1,6 +1,6 @@
 """Daily GitHub Issue: lists the new and removed postings with links, closes the previous day's issue.
 
-One issue body holds about 60,000 characters (GitHub allows 65,536), enough for a normal day. The two lists share that space
+One issue body is kept to about 30,000 characters (roughly 150 links; GitHub allows 65,536), enough for a normal day. The two lists share that space
 fairly: whatever the shorter list does not use goes to the longer one, in-role postings come first, and anything that still does not
 fit is replaced by a line pointing to data/history.csv. A single body is the default on purpose: the first version posted whole days
 as many large comments, and a burst of thousands of links in a few minutes got the account flagged by GitHub's abuse systems. Raise
@@ -15,6 +15,7 @@ import subprocess
 LABEL = "daily-digest"
 MAX_PART = 60000          # characters per issue body or comment, safely under GitHub's 65,536
 MAX_PARTS = 1             # one issue body and no comments by default (see above)
+TARGET_CHARS = 30000      # a single body aims at about 150 links, far fewer than the 65,536-character limit allows
 RESERVE = 3000            # room kept for the headings and the "and N more" lines
 MARK = "<!-- daily-digest-continued -->"
 DATE_TITLE = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # a digest issue is titled with its date
@@ -45,7 +46,8 @@ def build_parts(date: str, rows: list[dict], max_parts: int = MAX_PARTS) -> list
     new = [r for r in rows if r["first_seen"] == date and not r["first_run"]]
     removed = [r for r in rows if r["removed_date"] == date]
     sections = [(f"New postings ({len(new)})", _lines(new)), (f"Removed postings ({len(removed)})", _lines(removed))]
-    shares = _shares([sum(len(x) + 1 for x in lines) for _, lines in sections], max_parts * MAX_PART - RESERVE)
+    limit = TARGET_CHARS if max_parts == 1 else MAX_PART      # continuation comments, if enabled, use the full size
+    shares = _shares([sum(len(x) + 1 for x in lines) for _, lines in sections], max_parts * limit - RESERVE)
 
     parts: list[str] = []
     cur: list[str] = [f"Job watcher digest for **{date}** (UTC).", ""]
