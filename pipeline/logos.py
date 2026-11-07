@@ -37,11 +37,8 @@ DOMAINS = {
     "notion": "notion.so", "openai": "openai.com", "epicgames": "store.epicgames.com", "riotgames": "riotgames.com",
     "roblox": "roblox.com", "discord": "discord.com", "taketwo": "take2games.com", "rockstargames": "rockstargames.com",
     "bungie": "bungie.net", "scopely": "scopely.com", "twitch": "twitch.tv", "cloudflare": "cloudflare.com",
-    "supercell": "supercell.com", "ubisoft": "ubisoft.com", "microsoft": "microsoft.com", "netflix": "netflix.com",
-    "apple": "apple.com", "amazon": "amazon.com", "amd": "ir.amd.com", "servicenow": "servicenow.com",
-    "fidelity": "fidelity.com", "mastercard": "mastercard.com", "capitalone": "capitalone.com", "sony": "sony.com",
-    "intel": "intel.com", "samsung": "samsung.com", "adobe": "adobe.com", "cisco": "cisco.com",
-    "salesforce": "salesforce.com", "snap": "snap.com", "hp": "hp.com", "nvidia": "nvidia.com",
+    "supercell": "supercell.com", "ubisoft": "ubisoft.com",
+    "apple": "apple.com", "amazon": "amazon.com", "servicenow": "servicenow.com", "sony": "sony.com",
 }
 
 

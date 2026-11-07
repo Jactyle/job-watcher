@@ -1,5 +1,5 @@
 // Network first (fresh data when online), cache fallback (last data when offline).
-const CACHE = "job-watcher-v21";
+const CACHE = "job-watcher-v22";
 const SHELL = ["./", "index.html", "browse.html", "market.html", "globe.html", "app.css", "app.js", "country.js", "globe.js", "sfx.js", "land-110m.json", "fonts/share-tech-mono.woff2", "fonts/michroma.woff2", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 const DATA = ["data/history.csv", "data/status.json"];  // cached at install so the first visit works offline
 

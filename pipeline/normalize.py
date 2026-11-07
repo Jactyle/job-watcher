@@ -141,44 +141,6 @@ def workday(raw: dict, src: dict) -> list[dict]:
     return rows
 
 
-def eightfold(raw: dict, src: dict) -> list[dict]:
-    rows = []
-    for j in raw.get("positions", []):
-        locs = j.get("standardizedLocations") or j.get("locations") or []
-        rows.append(_row(
-            src, j["id"], j.get("name"), "; ".join(locs[:3]), j.get("department"),
-            _date_from_ms(int(j["postedTs"]) * 1000) if j.get("postedTs") else "",
-            f"https://{src['host']}{j.get('positionUrl') or ''}",
-        ))
-    return rows
-
-
-def jibe(raw: dict, src: dict) -> list[dict]:
-    rows = []
-    for item in raw.get("jobs", []):
-        j = item.get("data", item)
-        cats = j.get("categories") or []
-        rows.append(_row(
-            src, j.get("req_id") or j.get("slug"), j.get("title"),
-            j.get("full_location") or j.get("location_name"),
-            (cats[0].get("name") if cats and isinstance(cats[0], dict) else j.get("department")),
-            _date_from_iso(j.get("posted_date")),
-            f"https://{src['host']}/careers-home/jobs/{j.get('slug') or j.get('req_id')}",
-        ))
-    return rows
-
-
-def eightfold_apply(raw: dict, src: dict) -> list[dict]:
-    rows = []
-    for j in raw.get("positions", []):
-        rows.append(_row(
-            src, j["id"], j.get("name") or j.get("posting_name"), j.get("location"), j.get("department"),
-            _date_from_ms(int(j["t_create"]) * 1000) if j.get("t_create") else "",
-            j.get("canonicalPositionUrl") or f"https://{src['host']}/careers/job/{j['id']}",
-        ))
-    return rows
-
-
 def apple(raw: dict, src: dict) -> list[dict]:
     rows = []
     for j in raw.get("searchResults", []):
@@ -217,9 +179,6 @@ CONVERTERS = {
     "ashby": ashby,
     "smartrecruiters": smartrecruiters,
     "workday": workday,
-    "eightfold": eightfold,
-    "jibe": jibe,
-    "eightfold_apply": eightfold_apply,
     "apple": apple,
     "amazon": amazon,
 }

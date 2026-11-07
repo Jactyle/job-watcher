@@ -2,9 +2,9 @@
   "run_time": "2026-11-07T17:57:23Z",
   "first_run_date": "2026-10-29",
   "days_with_success": 5,
-  "open": 25136,
-  "new_today": 3536,
-  "removed_today": 3163,
+  "open": 8463,
+  "new_today": 1018,
+  "removed_today": 986,
   "sources": [
     {
       "name": "robinhood",
@@ -162,16 +162,6 @@
       "count": 298
     },
     {
-      "name": "microsoft",
-      "ok": true,
-      "count": 2373
-    },
-    {
-      "name": "netflix",
-      "ok": true,
-      "count": 394
-    },
-    {
       "name": "apple",
       "ok": true,
       "count": 133
@@ -182,74 +172,14 @@
       "count": 701
     },
     {
-      "name": "amd",
-      "ok": true,
-      "count": 1343
-    },
-    {
       "name": "servicenow",
       "ok": true,
       "count": 745
     },
     {
-      "name": "fidelity",
-      "ok": true,
-      "count": 855
-    },
-    {
-      "name": "mastercard",
-      "ok": true,
-      "count": 945
-    },
-    {
-      "name": "capitalone",
-      "ok": true,
-      "count": 2055
-    },
-    {
       "name": "sony",
       "ok": true,
       "count": 123
-    },
-    {
-      "name": "intel",
-      "ok": true,
-      "count": 839
-    },
-    {
-      "name": "samsung",
-      "ok": true,
-      "count": 626
-    },
-    {
-      "name": "adobe",
-      "ok": true,
-      "count": 278
-    },
-    {
-      "name": "cisco",
-      "ok": true,
-      "count": 1472
-    },
-    {
-      "name": "salesforce",
-      "ok": true,
-      "count": 1549
-    },
-    {
-      "name": "snap",
-      "ok": true,
-      "count": 214
-    },
-    {
-      "name": "hp",
-      "ok": true,
-      "count": 919
-    },
-    {
-      "name": "nvidia",
-      "ok": true,
-      "count": 2811
     }
   ]
 }

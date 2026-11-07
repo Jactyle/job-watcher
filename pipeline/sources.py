@@ -49,26 +49,10 @@ SOURCES = [
     _gh("cloudflare", "Cloudflare", "cloudflare"),
     {"name": "supercell", "employer": "Supercell", "ats": "ashby", "board": "supercell"},
     {"name": "ubisoft", "employer": "Ubisoft", "ats": "smartrecruiters", "board": "Ubisoft2"},
-    {"name": "microsoft", "employer": "Microsoft", "ats": "eightfold", "host": "apply.careers.microsoft.com",
-     "domain": "microsoft.com", "board": "microsoft"},
-    {"name": "netflix", "employer": "Netflix", "ats": "eightfold_apply", "host": "explore.jobs.netflix.net",
-     "domain": "netflix.com", "board": "netflix"},
     {"name": "apple", "employer": "Apple", "ats": "apple", "board": "apple"},
     {"name": "amazon", "employer": "Amazon", "ats": "amazon", "board": "amazon"},
-    {"name": "amd", "employer": "AMD", "ats": "jibe", "host": "careers.amd.com", "board": "amd"},
     {"name": "servicenow", "employer": "ServiceNow", "ats": "smartrecruiters", "board": "ServiceNow"},
-    _wd("fidelity", "Fidelity Investments", "fmr.wd1.myworkdayjobs.com", "fmr", "FidelityCareers"),
-    _wd("mastercard", "Mastercard", "mastercard.wd1.myworkdayjobs.com", "mastercard", "CorporateCareers"),
-    _wd("capitalone", "Capital One", "capitalone.wd12.myworkdayjobs.com", "capitalone", "Capital_One"),
     _wd("sony", "Sony", "sonyglobal.wd1.myworkdayjobs.com", "sonyglobal", "SonyGlobalCareers"),
-    _wd("intel", "Intel", "intel.wd1.myworkdayjobs.com", "intel", "External"),
-    _wd("samsung", "Samsung", "sec.wd3.myworkdayjobs.com", "sec", "Samsung_Careers"),
-    _wd("adobe", "Adobe", "adobe.wd5.myworkdayjobs.com", "adobe", "external_experienced"),
-    _wd("cisco", "Cisco", "cisco.wd5.myworkdayjobs.com", "cisco", "Cisco_Careers"),
-    _wd("salesforce", "Salesforce", "salesforce.wd12.myworkdayjobs.com", "salesforce", "External_Career_Site"),
-    _wd("snap", "Snap", "snapchat.wd1.myworkdayjobs.com", "snapchat", "snap"),
-    _wd("hp", "HP", "hp.wd5.myworkdayjobs.com", "hp", "ExternalCareerSite"),
-    _wd("nvidia", "NVIDIA", "nvidia.wd5.myworkdayjobs.com", "nvidia", "NVIDIAExternalCareerSite"),
 ]
 
 # A board with more than 5,000 postings must be requested with a search term (none is today).
@@ -190,67 +174,6 @@ def fetch_workday(src):
     return {"total": len(postings), "jobPostings": postings}
 
 
-def _eightfold_pass(src, blocks=12, block_wait=15):
-    """One crawl of the list. The firewall sometimes answers 403 for a while in the middle of a crawl, so a
-    403 is waited out, but only `blocks` times in all: a board that stays blocked fails instead of stalling."""
-    positions, start, total = [], 0, None
-    while total is None or start < total:
-        try:
-            page = _request(f"https://{src['host']}/api/pcsx/search?domain={src['domain']}&query=&start={start}",
-                            retries=1, throttle_waits=80, throttle_wait=1.5)["data"]
-        except urllib.error.HTTPError as exc:
-            if exc.code != 403 or blocks <= 0:
-                raise
-            blocks -= 1
-            time.sleep(block_wait)
-            continue
-        total = page["count"]
-        if not page["positions"]:
-            break
-        positions.extend(page["positions"])
-        start += len(page["positions"])
-    return positions, total
-
-
-def fetch_eightfold(src, budget=600):
-    """Eightfold career sites (Microsoft): 10 positions per page. The list shifts while it is being
-    paged, which skips a few postings, so crawl again (time permitting) and keep the union."""
-    started = time.time()
-    positions, total = _eightfold_pass(src)
-    if len({p["id"] for p in positions}) < total and time.time() - started < budget:
-        seen = {p["id"] for p in positions}
-        positions += [p for p in _eightfold_pass(src)[0] if p["id"] not in seen]
-    unique = {p["id"]: p for p in positions}
-    return {"count": total, "positions": list(unique.values())}
-
-
-def fetch_jibe(src):
-    """Jibe career sites (AMD): 100 jobs per page; the facet counts in the reply are not kept."""
-    jobs, page_no, total = [], 1, None
-    while total is None or len(jobs) < total:
-        page = _request(f"https://{src['host']}/api/jobs?limit=100&page={page_no}")
-        total = page["totalCount"]
-        if not page["jobs"]:
-            break
-        jobs.extend(page["jobs"])
-        page_no += 1
-    return {"totalCount": total, "jobs": jobs}
-
-
-def fetch_eightfold_apply(src):
-    """Eightfold apply/v2 API (Netflix): 10 positions per page, top-level `positions`."""
-    positions, start, total = [], 0, None
-    while total is None or start < total:
-        page = _request(f"https://{src['host']}/api/apply/v2/jobs?domain={src['domain']}&start={start}&num=10",
-                        retries=1, throttle_waits=80, throttle_wait=1.5)
-        total = page["count"]
-        if not page["positions"]:
-            break
-        positions.extend(page["positions"])
-        start += len(page["positions"])
-    return {"count": total, "positions": list({p["id"]: p for p in positions}.values())}
-
-
 def fetch_apple(src):
     """Apple's search API (POST, 20 per page). Apple has over 5,000 postings, so a search term is used."""
     results, page_no, total = [], 1, None
@@ -286,9 +209,6 @@ FETCHERS = {
     "ashby": fetch_ashby,
     "smartrecruiters": fetch_smartrecruiters,
     "workday": fetch_workday,
-    "eightfold": fetch_eightfold,
-    "jibe": fetch_jibe,
-    "eightfold_apply": fetch_eightfold_apply,
     "apple": fetch_apple,
     "amazon": fetch_amazon,
 }

@@ -53,7 +53,7 @@ const mono = (employer, big = false, source = "") => {
   const img = source ? `<img src="logos/${esc(source)}.png" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove('has-logo');this.remove()">` : "";
   return `<span class="mono${big ? " big" : ""}${img ? " has-logo" : ""}"><b>${letter}</b>${img}</span>`;
 };
-// Source keys in status.json are lowercase ("capitalone"); show each source as its employer's name ("Capital One").
+// Source keys in status.json are lowercase ("taketwo"); show each source as its employer's name ("Take-Two Interactive").
 const sourceNames = (rows) => { const m = {}; for (const r of rows) if (r.source && r.employer && !m[r.source]) m[r.source] = r.employer; return m; };
 // "In role" is decided by the title rule in pipeline/rules.py. This is the same rule in plain words, shown from any "?" button.
 const ROLE_TIP = "In role: the title looks like a financial analyst or data analyst job. Click the ? button for the full rule.";
