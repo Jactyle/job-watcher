@@ -64,9 +64,9 @@ def _big_day(n_new=900, n_removed=900):
     return rows
 
 
-def test_every_posting_is_listed_even_when_one_issue_body_cannot_hold_the_day():
+def test_with_continuation_comments_allowed_every_posting_is_listed():
     rows = _big_day()
-    parts = build_parts("2026-01-02", rows)
+    parts = build_parts("2026-01-02", rows, max_parts=10)
     assert len(parts) > 1 and all(len(p) <= 65536 for p in parts)
     text = "\n".join(parts)
     assert text.count("](https://x/new") == 900 and text.count("](https://x/old") == 900   # nothing is dropped
@@ -77,7 +77,7 @@ def test_every_posting_is_listed_even_when_one_issue_body_cannot_hold_the_day():
 
 
 def test_a_continuation_names_the_section_it_continues():
-    parts = build_parts("2026-01-02", _big_day(n_new=10, n_removed=1500))
+    parts = build_parts("2026-01-02", _big_day(n_new=10, n_removed=1500), max_parts=10)
     assert any("## Removed postings (continued)" in p for p in parts[1:])
     assert "Removed postings (1500)" in "\n".join(parts)
 
@@ -86,18 +86,20 @@ def test_a_small_day_is_one_issue_body_with_no_comments():
     assert len(build_parts("2026-01-02", [row("a"), row("b", first_seen="2026-01-01", removed_date="2026-01-02")])) == 1
 
 
-def test_publish_posts_the_continuation_comments_in_order(monkeypatch):
+def test_publish_posts_the_continuation_comments_in_order_when_allowed(monkeypatch):
     from pipeline import issue
+    monkeypatch.setattr(issue, "MAX_PARTS", 10)
     calls = _fake_gh(monkeypatch, [])
     rows = _big_day()
     issue.publish("2026-01-02", rows)
     comments = [c for c in calls if c[:2] == ("issue", "comment")]
-    assert len(comments) == len(build_parts("2026-01-02", rows)) - 1 and all(c[2] == "42" for c in comments)
+    assert len(comments) == len(build_parts("2026-01-02", rows, max_parts=10)) - 1 and all(c[2] == "42" for c in comments)
 
 
 def test_a_second_run_today_replaces_the_old_continuation_comments(monkeypatch):
     from pipeline import issue
     calls = _fake_gh(monkeypatch, [{"number": 7, "title": "2026-01-02", "state": "OPEN"}], old_comment_ids="11\n12\n")
+    monkeypatch.setattr(issue, "MAX_PARTS", 10)
     issue.publish("2026-01-02", _big_day())
     deletes = [c for c in calls if c[:3] == ("api", "-X", "DELETE")]
     assert [c[3] for c in deletes] == ["repos/{owner}/{repo}/issues/comments/11", "repos/{owner}/{repo}/issues/comments/12"]
@@ -130,3 +132,44 @@ def test_only_digest_issues_are_ever_closed(monkeypatch):
     issue.publish("2026-01-02", [])
     closes = [c[2] for c in calls if c[:2] == ("issue", "close")]
     assert closes == ["2"]                                                    # the person's own issue is left alone
+
+
+# ---- the default: one issue body and no comments, so a big day never becomes a burst of posts ----
+
+def test_by_default_a_huge_day_is_one_body_and_posts_no_comments(monkeypatch):
+    from pipeline import issue
+    calls = _fake_gh(monkeypatch, [])
+    issue.publish("2026-01-02", _big_day())
+    assert len([c for c in calls if c[:2] == ("issue", "create")]) == 1
+    assert not [c for c in calls if c[:2] == ("issue", "comment")]
+    assert len(build_parts("2026-01-02", _big_day())) == 1
+
+
+def test_the_single_body_stays_within_githubs_limit_and_points_to_the_full_list():
+    body = build_body("2026-01-02", _big_day())
+    assert len(body) <= 65536
+    assert "…and " in body and "data/history.csv" in body
+    assert "New postings (900)" in body and "Removed postings (900)" in body        # the headings still give the true totals
+
+
+def test_the_shorter_list_leaves_its_space_to_the_longer_one():
+    rows = _big_day(n_new=20, n_removed=1500)
+    body = build_body("2026-01-02", rows)
+    assert body.count("](https://x/new") == 20                                       # the short list is shown in full
+    shown_removed = body.count("](https://x/old")
+    assert shown_removed > 250                                                       # more than the old fixed half-share allowed
+    assert f"…and {1500 - shown_removed} more" in body
+
+
+def test_when_cut_short_every_in_role_posting_is_still_listed_first():
+    rows = _big_day(n_new=900, n_removed=900)
+    body = build_body("2026-01-02", rows)
+    assert body.count("**[in role]**") == sum(r["in_role"] for r in rows)            # none of them is dropped
+    first_new = body.split("## New postings")[1].split("\n")[3]
+    assert "**[in role]**" in first_new                                              # and they lead the list
+
+
+def test_a_normal_day_is_listed_in_full():
+    rows = _big_day(n_new=60, n_removed=165)
+    body = build_body("2026-01-02", rows)
+    assert body.count("](https://x/new") == 60 and body.count("](https://x/old") == 165 and "…and " not in body

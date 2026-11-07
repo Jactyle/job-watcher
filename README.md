@@ -16,7 +16,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `pipeline/normalize.py` | Converts each ATS's raw JSON into the common columns. |
 | `pipeline/rules.py` | The title rule (`in_role`). |
 | `pipeline/build.py` | Builds `data/history.csv` from the raw files alone and computes `data/status.json`. |
-| `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. It lists every new and removed posting with a link; a day too big for one issue body (GitHub allows 65,536 characters) continues in comments on the same issue, which a second run on the same day replaces. Digest issues are found by their date title, not by the label filter, because GitHub's label-filtered listing can come back empty. |
+| `pipeline/issue.py` | Builds and publishes the daily GitHub Issue, closes the previous one. It lists the new and removed postings with links in one issue body (about 60,000 characters, enough for a normal day). The two lists share that space fairly, in-role postings come first, and on an unusually big day anything that does not fit becomes a line pointing to `data/history.csv`. One body and no comments is the default on purpose: posting thousands of links in a few minutes got the account flagged by GitHub's abuse systems. Continuation comments still exist but only if `MAX_PARTS` is raised, and a second run on the same day replaces them. Digest issues are found by their date title, not by the label filter, because GitHub's label-filtered listing can come back empty. |
 | `pipeline/logos.py` | Downloads each employer's icon into `logos/` (`python -m pipeline.logos`). Run by hand when an employer is added; the daily run does not use it. |
 | `pipeline/run.py` | One daily run: fetch all sources in parallel, save raw, build, write status, open the issue. A failed source or issue step never stops the commit. |
 | `pipeline/__init__.py` | Marks `pipeline` as a Python package. |
@@ -25,7 +25,7 @@ Live site: https://jactyle.github.io/job-watcher/
 | `tests/test_build.py` | First-seen, last-seen, removed and reopened logic, `first_run`, sorting, reproducible rebuild, status counts. |
 | `tests/test_run.py` | A failed source is recorded and writes no raw file. |
 | `tests/test_sources.py`, `tests/test_workday_split.py`, `tests/test_eightfold.py` | Fetch helpers: raw file writing, Workday 2,000-result splitting, Microsoft second pass. |
-| `tests/test_issue.py` | The daily issue text: every posting is listed, a large day continues in comments and nothing is cut, and a second run on the same day updates the issue and replaces those comments. |
+| `tests/test_issue.py` | The daily issue text: a normal day is listed in full, a huge day stays one body and posts no comments, the shorter list leaves its space to the longer one, every in-role posting is kept and listed first, and a second run on the same day updates the issue and (when enabled) replaces its continuation comments. |
 | `tests/test_logos.py` | Every watched employer has a logo domain and a PNG file in `logos/`. |
 | `tests/test_globe_data.py` | The Globe has a place for every country `country.js` can return, the service worker only caches files that exist and lists every page, every page loads `sfx.js` before `app.js`, the nav links are the four pages, and every manifest icon exists. |
 | `tests/test_country_js.py` | `country.js` run with node: country codes, US states, mixed postings, unknown locations (skipped where node is not installed). |

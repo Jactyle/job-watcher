@@ -1,7 +1,10 @@
-"""Daily GitHub Issue: lists every new and removed posting, closes the previous day's issue.
+"""Daily GitHub Issue: lists the new and removed postings with links, closes the previous day's issue.
 
-GitHub allows 65,536 characters in an issue body or a comment. A big day does not fit in one body, so the list continues in
-comments on the same issue (marked with MARK so a second run on the same day can replace them) until every posting is listed.
+One issue body holds about 60,000 characters (GitHub allows 65,536), enough for a normal day. The two lists share that space
+fairly: whatever the shorter list does not use goes to the longer one, in-role postings come first, and anything that still does not
+fit is replaced by a line pointing to data/history.csv. A single body is the default on purpose: the first version posted whole days
+as many large comments, and a burst of thousands of links in a few minutes got the account flagged by GitHub's abuse systems. Raise
+MAX_PARTS (or pass max_parts) only if you want continuation comments, which a second run on the same day replaces (see MARK).
 """
 from __future__ import annotations
 
@@ -11,6 +14,8 @@ import subprocess
 
 LABEL = "daily-digest"
 MAX_PART = 60000          # characters per issue body or comment, safely under GitHub's 65,536
+MAX_PARTS = 1             # one issue body and no comments by default (see above)
+RESERVE = 3000            # room kept for the headings and the "and N more" lines
 MARK = "<!-- daily-digest-continued -->"
 DATE_TITLE = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # a digest issue is titled with its date
 
@@ -26,10 +31,22 @@ def _lines(rows: list[dict]) -> list[str]:
             f" ({r['location'] or 'no location'})" for r in rows]
 
 
-def build_parts(date: str, rows: list[dict]) -> list[str]:
-    """The digest as one or more texts: the first is the issue body, the rest are continuation comments. Every posting is listed."""
+def _shares(sizes: list[int], capacity: int) -> list[int]:
+    """Split capacity between two lists: each gets what it needs, and the shorter one's unused space goes to the longer one."""
+    if sum(sizes) <= capacity:
+        return list(sizes)
+    half = capacity // 2
+    first = min(sizes[0], max(half, capacity - sizes[1]))
+    return [first, min(sizes[1], capacity - first)]
+
+
+def build_parts(date: str, rows: list[dict], max_parts: int = MAX_PARTS) -> list[str]:
+    """The digest as one or more texts: the first is the issue body, any others are continuation comments (only if max_parts > 1)."""
     new = [r for r in rows if r["first_seen"] == date and not r["first_run"]]
     removed = [r for r in rows if r["removed_date"] == date]
+    sections = [(f"New postings ({len(new)})", _lines(new)), (f"Removed postings ({len(removed)})", _lines(removed))]
+    shares = _shares([sum(len(x) + 1 for x in lines) for _, lines in sections], max_parts * MAX_PART - RESERVE)
+
     parts: list[str] = []
     cur: list[str] = [f"Job watcher digest for **{date}** (UTC).", ""]
     size = sum(len(x) + 1 for x in cur)
@@ -47,16 +64,22 @@ def build_parts(date: str, rows: list[dict]) -> list[str]:
         cur.append(line)
         size += len(line) + 1
 
-    for heading, items in ((f"New postings ({len(new)})", new), (f"Removed postings ({len(removed)})", removed)):
+    for (heading, lines), share in zip(sections, shares):
         name = heading.split(" (")[0]
         if size + 1000 > MAX_PART:          # never leave a heading alone at the end of a part
             start_continuation(None)
         add(f"## {heading}", None); add("", None)
-        lines = _lines(items)
         if not lines:
             add("None.", name)
+        used = shown = 0
         for line in lines:
+            if used + len(line) + 1 > share:
+                break
             add(line, name)
+            used += len(line) + 1
+            shown += 1
+        if shown < len(lines):
+            add(f"…and {len(lines) - shown} more (the full list is in data/history.csv).", name)
         add("", name)
     parts.append("\n".join(cur).rstrip() + "\n")
     if len(parts) > 1:
@@ -85,7 +108,7 @@ def _replace_continuations(number: int, extra: list[str]) -> None:
 
 def publish(date: str, rows: list[dict]) -> None:
     """Create or update today's issue, close every other open digest issue, and post any continuation comments."""
-    parts = build_parts(date, rows)
+    parts = build_parts(date, rows, MAX_PARTS)
     body, extra = parts[0], parts[1:]
     _gh("label", "create", LABEL, "--color", "0e8a16", "--force")
     # Digest issues are found by their date title, not by label: GitHub's label-filtered listing can come back empty (it did for every
