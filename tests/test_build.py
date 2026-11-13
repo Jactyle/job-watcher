@@ -102,3 +102,11 @@ def test_a_later_listing_with_a_new_title_replaces_it(tmp_path):
     write_raw(tmp_path / "2026-01-02" / "acme.json.gz", [job(1, "Sales Manager")])
     h = history(tmp_path)["1"]
     assert (h["title"], h["in_role"]) == ("Sales Manager", False)
+
+
+def test_every_raw_file_belongs_to_a_current_source():
+    """The history must come from the raw files alone, so no raw file may be left over from a retired employer."""
+    from pipeline.sources import SOURCES
+    names = {s["name"] for s in SOURCES}
+    stray = sorted(f.as_posix() for f in build.RAW.glob("*/*.json.gz") if f.name[:-len(".json.gz")] not in names)
+    assert stray == []
