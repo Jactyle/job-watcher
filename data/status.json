@@ -1,25 +1,25 @@
 {
-  "run_time": "2026-11-15T18:34:33Z",
+  "run_time": "2026-11-16T19:15:58Z",
   "first_run_date": "2026-10-29",
-  "days_with_success": 6,
-  "open": 8604,
-  "new_today": 988,
-  "removed_today": 886,
+  "days_with_success": 7,
+  "open": 8562,
+  "new_today": 122,
+  "removed_today": 173,
   "sources": [
     {
       "name": "robinhood",
       "ok": true,
-      "count": 165
+      "count": 164
     },
     {
       "name": "coinbase",
       "ok": true,
-      "count": 265
+      "count": 261
     },
     {
       "name": "stripe",
       "ok": true,
-      "count": 785
+      "count": 789
     },
     {
       "name": "affirm",
@@ -29,12 +29,12 @@
     {
       "name": "brex",
       "ok": true,
-      "count": 286
+      "count": 278
     },
     {
       "name": "mercury",
       "ok": true,
-      "count": 79
+      "count": 78
     },
     {
       "name": "chime",
@@ -44,52 +44,52 @@
     {
       "name": "carta",
       "ok": true,
-      "count": 78
+      "count": 76
     },
     {
       "name": "toast",
       "ok": true,
-      "count": 354
+      "count": 347
     },
     {
       "name": "sofi",
       "ok": true,
-      "count": 48
+      "count": 50
     },
     {
       "name": "gusto",
       "ok": true,
-      "count": 75
+      "count": 76
     },
     {
       "name": "betterment",
       "ok": true,
-      "count": 28
+      "count": 27
     },
     {
       "name": "databricks",
       "ok": true,
-      "count": 895
+      "count": 888
     },
     {
       "name": "airbnb",
       "ok": true,
-      "count": 213
+      "count": 206
     },
     {
       "name": "palantir",
       "ok": true,
-      "count": 302
+      "count": 303
     },
     {
       "name": "spotify",
       "ok": true,
-      "count": 87
+      "count": 88
     },
     {
       "name": "ramp",
       "ok": true,
-      "count": 180
+      "count": 178
     },
     {
       "name": "notion",
@@ -99,22 +99,22 @@
     {
       "name": "openai",
       "ok": true,
-      "count": 837
+      "count": 834
     },
     {
       "name": "epicgames",
       "ok": true,
-      "count": 142
+      "count": 139
     },
     {
       "name": "riotgames",
       "ok": true,
-      "count": 194
+      "count": 195
     },
     {
       "name": "roblox",
       "ok": true,
-      "count": 271
+      "count": 263
     },
     {
       "name": "discord",
@@ -124,7 +124,7 @@
     {
       "name": "taketwo",
       "ok": true,
-      "count": 35
+      "count": 33
     },
     {
       "name": "rockstargames",
@@ -139,7 +139,7 @@
     {
       "name": "scopely",
       "ok": true,
-      "count": 179
+      "count": 178
     },
     {
       "name": "twitch",
@@ -149,7 +149,7 @@
     {
       "name": "cloudflare",
       "ok": true,
-      "count": 479
+      "count": 471
     },
     {
       "name": "supercell",
@@ -159,27 +159,27 @@
     {
       "name": "ubisoft",
       "ok": true,
-      "count": 288
+      "count": 303
     },
     {
       "name": "apple",
       "ok": true,
-      "count": 141
+      "count": 142
     },
     {
       "name": "amazon",
       "ok": true,
-      "count": 669
+      "count": 672
     },
     {
       "name": "servicenow",
       "ok": true,
-      "count": 815
+      "count": 808
     },
     {
       "name": "sony",
       "ok": true,
-      "count": 128
+      "count": 129
     }
   ]
 }
